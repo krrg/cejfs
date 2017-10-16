@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.github.serceman:jnr-fuse:0.5.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.serceman/jnr-fuse/0.5.1/51a290dd7d3f5177c5d8436aaca644df5bebbba0/jnr-fuse-0.5.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.serceman/jnr-fuse/0.5.1/79ed2c57619d5e53a8e5357be009d3eaee68ef7/jnr-fuse-0.5.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

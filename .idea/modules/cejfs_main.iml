@@ -9,5 +9,17 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Gradle: com.github.serceman:jnr-fuse:0.5.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-posix:3.0.41" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-ffi:2.1.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-constants:0.9.9" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jffi:1.2.16" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jffi:native:1.2.16" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm-commons:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm-analysis:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm-util:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm-tree:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-x86asm:1.0.2" level="project" />
   </component>
 </module>
