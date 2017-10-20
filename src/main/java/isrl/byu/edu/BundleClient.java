@@ -15,7 +15,8 @@ public class BundleClient implements IBundleClient {
     @Override
     public boolean saveFile(byte[] bytes, String filename) {
 
-        queuedFileSaves.put(filename, bytes);
+        BundleFileData bundleFile = new BundleFileData(filename,bytes);
+        queuedFileSaves.put(filename, bundleFile);
         return true;
     }
 
@@ -39,9 +40,9 @@ public class BundleClient implements IBundleClient {
         //todo: BIG TODO get bundle from aws
         //todo: create a better fake bundle
         boolean successfulPullFromAWS = true;
-        byte[] myFakeBundle = new byte[10];
-        if(myFakeBundle != null) {
-            queuedFileSaves.put(bundleId, myFakeBundle);
+        Bundle myFakeData = new Bundle(bundleId, new ArrayList<BundleFileData>());
+        if(myFakeData != null) {
+            cachedBundles.put(bundleId, myFakeData);
         }
         else
         {
@@ -77,6 +78,7 @@ public class BundleClient implements IBundleClient {
             deleteBundle(deadBundleId);
             deadBundleId = fileToBundleMapper.popDeadBundleId();
         }
+        return false;
     }
 
     private boolean deleteBundle(String bundleId) {
