@@ -2,12 +2,10 @@ package isrl.byu.edu;
 
 import isrl.byu.edu.examples.HelloFuse;
 import isrl.byu.edu.examples.HelloS3;
+import ru.serce.jnrfuse.FuseFS;
 
 import java.io.IOException;
 
-/**
- * Created by krr428 on 10/16/17.
- */
 public class Main {
 
     public static void main(String[] args) {
@@ -18,6 +16,8 @@ public class Main {
         //} catch (IOException e) {
         //    e.printStackTrace();
         //}
+
+        System.out.println("hello world");
 
     }
 
