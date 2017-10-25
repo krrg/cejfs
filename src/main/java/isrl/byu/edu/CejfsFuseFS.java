@@ -2,12 +2,14 @@ package isrl.byu.edu;
 
 import isrl.byu.edu.bundle.IBundleClient;
 import isrl.byu.edu.metadata.IMetadataClient;
+import isrl.byu.edu.metadata.MetadataHandle;
 import jnr.ffi.types.mode_t;
 import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 import java.util.List;
+import java.util.Optional;
 
 public class CejfsFuseFS extends FuseStubFS {
 
@@ -22,7 +24,16 @@ public class CejfsFuseFS extends FuseStubFS {
     }
 
     @Override
-    public int create(String path, @mode_t long mode, FuseFileInfo fi) {
+    public int getattr(String path, FileStat stat) {
+        Optional<MetadataHandle> optMetadata = metadataClient.getMetadata(path);
+
+        if (! optMetadata.isPresent()) {
+            return -1; /* I think this means something bad happened */
+        }
+
+        MetadataHandle metadata = optMetadata.get();
+
+
         return 0;
     }
 }
