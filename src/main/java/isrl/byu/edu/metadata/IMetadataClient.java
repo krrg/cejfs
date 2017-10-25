@@ -8,16 +8,16 @@ import java.util.Optional;
  */
 public interface IMetadataClient {
 
-    default boolean doesMetadataExist(Path path) {
+    default boolean doesMetadataExist(String path) {
         return this.getMetadata(path).isPresent();
     }
 
-    Optional<MetadataHandle> createFile(Path path);
-    Optional<MetadataHandle> createDirectory(Path path);
+    Optional<MetadataHandle> createFile(String path);
+    Optional<MetadataHandle> createDirectory(String path);
 
-    boolean deleteMetadata(Path path);
+    boolean deleteMetadata(String path);
 
-    Optional<MetadataHandle> getMetadata(Path path);
+    Optional<MetadataHandle> getMetadata(String path);
 
 
 }

@@ -1,4 +1,4 @@
-package isrl.byu.edu;
+package isrl.byu.edu.bundle;
 
 import java.util.ArrayList;
 

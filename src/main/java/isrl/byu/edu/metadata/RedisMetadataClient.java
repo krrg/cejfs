@@ -20,33 +20,28 @@ public class RedisMetadataClient implements IMetadataClient {
     }
 
     @Override
-    public Optional<MetadataHandle> createFile(Path path) {
+    public Optional<MetadataHandle> createFile(String path) {
         RedisCommands<String, String> commands = redis.connect().sync();
-        if (commands.get(path.toString()) != null) {
+        if (commands.get(path) != null) {
             return Optional.empty();
         }
 
-        throw new UnsupportedOperationException();
-
+        return Optional.empty();
     }
 
     @Override
-    public Optional<MetadataHandle> createDirectory(Path path) {
+    public Optional<MetadataHandle> createDirectory(String path) {
         return null;
     }
 
     @Override
-    public boolean deleteMetadata(Path path) {
+    public boolean deleteMetadata(String path) {
         return false;
     }
 
     @Override
-    public Optional<MetadataHandle> getMetadata(Path path) {
+    public Optional<MetadataHandle> getMetadata(String path) {
         return null;
     }
 
-
-    private Optional<MetadataHandle> getMetadata(Path path, StatefulRedisConnection<String, String> redisConnection) {
-        redisConnection.sync().get()
-    }
 }

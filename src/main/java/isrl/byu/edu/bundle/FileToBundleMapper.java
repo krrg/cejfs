@@ -1,8 +1,7 @@
-package isrl.byu.edu;
+package isrl.byu.edu.bundle;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Stack;
 
 public class FileToBundleMapper {
 
