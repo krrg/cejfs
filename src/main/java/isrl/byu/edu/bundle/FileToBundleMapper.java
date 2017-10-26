@@ -6,20 +6,27 @@ public class FileToBundleMapper {
 
     private Queue<String> bundlesToBeDeleted = new LinkedList<String>();
     private HashMap<String, String> fileToBundleId = new HashMap<>();
-    private HashMap<String, List<String>>  bundleIdToFiles = new HashMap<>();
-
+    private HashMap<String, HashSet<String>>  bundleIdToFiles = new HashMap<>();
 
     public String popDeadBundleId()
     {
         return bundlesToBeDeleted.poll();
     }
 
-
-
     public boolean remapBundle(Bundle newBundle)
     {
-        //remap each file
-        return false;
+        if(newBundle == null)
+        {
+            return false;
+        }
+
+        for (BundleFileData bundleFileData:
+                newBundle.files) {
+
+            remapFile(bundleFileData.filename, newBundle.bundleID);
+        }
+
+        return true;
     }
 
     //1. set the file to bundle mapping
@@ -36,7 +43,7 @@ public class FileToBundleMapper {
         }
         if(oldBundleId != null)
         {
-            List<String> filesInOldBundle = getFilesInBundle(bundleId);
+            HashSet<String> filesInOldBundle = getFilesInBundle(bundleId);
             filesInOldBundle.remove(filename);
 
             if(filesInOldBundle.size() == 0)
@@ -45,7 +52,7 @@ public class FileToBundleMapper {
             }
         }
 
-        List<String> filesInBundle = getFilesInBundle(bundleId);
+        HashSet<String> filesInBundle = getFilesInBundle(bundleId);
         filesInBundle.add(filename);
 
         return oldBundleId;
@@ -56,20 +63,14 @@ public class FileToBundleMapper {
         return fileToBundleId.get(filename);
     }
 
-    private List<String> getFilesInBundle(String bundleId)
+    private HashSet<String> getFilesInBundle(String bundleId)
     {
-        List<String> filesInBundle = bundleIdToFiles.get(bundleId);
+        HashSet<String> filesInBundle = bundleIdToFiles.get(bundleId);
         if(filesInBundle == null)
         {
-            filesInBundle = new ArrayList<>();
+            filesInBundle = new HashSet<String>();
         }
 
         return filesInBundle;
     }
-
-    public boolean flush()
-    {
-        return false;
-    }
-
 }
