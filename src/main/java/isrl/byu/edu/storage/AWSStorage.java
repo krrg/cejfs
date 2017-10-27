@@ -1,9 +1,43 @@
 package isrl.byu.edu.storage;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.nio.file.NoSuchFileException;
+
 public class AWSStorage implements IStorage{
     @Override
     public String getID() {
         return "aws";
+    }
+
+    @Override
+    public int write(String filename, byte[] data) throws ConnectException {
+        return 0;
+    }
+
+    @Override
+    public byte[] read(String filename) throws FileNotFoundException, NoSuchFileException, ConnectException {
+        return new byte[0];
+    }
+
+    @Override
+    public boolean delete(String filename) throws ConnectException {
+        return false;
+    }
+
+    @Override
+    public int writeMetadata(String key, String value) throws ConnectException {
+        return 0;
+    }
+
+    @Override
+    public String readMetadata(String key) throws NoSuchFieldException, ConnectException {
+        return null;
+    }
+
+    @Override
+    public int deleteMetadata(String key) throws ConnectException {
+        return 0;
     }
 
     @Override

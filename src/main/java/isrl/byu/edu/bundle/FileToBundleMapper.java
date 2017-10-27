@@ -85,7 +85,15 @@ public class FileToBundleMapper {
         }
 
         dirtyFileMappings.add(filename);
+        cleanOldBundle(oldBundleID, filename);
 
+        addFileBundleMetadata(bundleID, filename);
+
+        return oldBundleID;
+    }
+    private boolean cleanOldBundle(String oldBundleID, String filename)
+    {
+        boolean beginOldBundleDeletion =false;
         if(oldBundleID != null)
         {
             HashSet<String> filesInOldBundle = getFilesInBundle(oldBundleID);
@@ -93,14 +101,14 @@ public class FileToBundleMapper {
 
             if(filesInOldBundle.size() == 0)
             {
+                beginOldBundleDeletion =true;
                 bundlesToBeDeleted.add(oldBundleID);
                 dirtyBundleMappings.remove(oldBundleID);
                 bundleIDToFiles.remove(oldBundleID);
+
             }
         }
-        addFileBundleMetadata(bundleID, filename);
-
-        return oldBundleID;
+        return beginOldBundleDeletion;
     }
 
 }

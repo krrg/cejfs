@@ -25,7 +25,6 @@ public class BundleClient implements IBundleClient {
     IStorage localDisk;
     IStorage aws;
 
-
     public BundleClient()
     {
         localDisk = new LocalDiskStorage();
@@ -48,6 +47,7 @@ public class BundleClient implements IBundleClient {
         BundleFileData bundleFile = new BundleFileData(filename,bytes);
         queuedFileSaves.put(filename, bundleFile);
 
+        //todo: change this to be a file size instead of number of files or maybe and files?
         if(queuedFileSaves.size() >= MAX_FILES_PER_BUNDLE)
         {
             flush();
@@ -60,56 +60,94 @@ public class BundleClient implements IBundleClient {
     /**
        1. Reading a file will check the queuedFileSaves for upto date data.
        2. Reading a file will check the cache
-       3. If not in either, reading a file will attempt to fetch the bundle from AWS
-          If a file is both in the queuedFileSaves and somewhere else, then the file with the latest timestamp is returned
-
+       3. If not in either, reading a file will attempt to fetch the bundle from remote locations
        4. If not available, the file is missing from AWS, or the filename has no meta data,
             then an exception will be called
      */
     @Override
-    public byte[] readFile(String filename) throws FileNotFoundException, ConnectException{
+    public byte[] readFile(String filename) throws NoSuchFileException, FileNotFoundException{
 
         //read from pre committed local data
         BundleFileData preCommittedFile = queuedFileSaves.get(filename);
-
-        //read from saved cashed data
-        String bundleID = fileToBundleMapper.getBundleID(filename);
-        if(bundleID == null)
-        {
-            throw new NoSuchFileException("No file metadata found");
-        }
-
-        if(!cachedBundles.containsKey(bundleID))
-        {
-            //This will throw exceptions if this fails
-            Bundle fetchedBundle = fetchBundle(bundleID);
-            cachedBundles.put(bundleID, fetchedBundle);
-
-        }
-        //If no exception has been thrown, then the bundle is now cached
-        BundleFileData committedFile = cachedBundles.get(bundleID).getFile(filename);
-
+        //todo: this assumes preCommittedFiles are always the most upto date.
         if(preCommittedFile != null)
         {
-            if(preCommittedFile.getLastModified().compareTo(committedFile.getLastModified()) >= 0)
-            {
-                return preCommittedFile.getData();
-            }
+            return preCommittedFile.getData();
         }
+
+        //get bundleID
+        String bundleID = fetchBundleID(filename);
+        if(bundleID == null)
+        {
+            throw new NoSuchFileException("Could not find the metadata in any of the locations");
+        }
+        if(fileToBundleMapper.getBundleID(filename)==null)
+        {
+            //todo: update cache with new data
+        }
+
+        //get bundle
+        Bundle bundle = fetchBundle(bundleID, filename);
+        if(bundle == null)
+        {
+            throw new FileNotFoundException("Could not find the bundle in any of the locations");
+        }
+
+        BundleFileData committedFile = cachedBundles.get(bundleID).getFile(filename);
+
         return committedFile.getData();
     }
 
-    //todo: um what about fetching metadata? or updating it?
-
-    private Bundle fetchBundle(IStorage storageLocation, String bundleID) throws FileNotFoundException, DeserializationException, ConnectException
+    private String fetchBundleID(String filename)
     {
-        //todo: get bundle from aws
-        boolean FAKE_AWSConnectionFailed = false;
+        String fetchedBundleID = fileToBundleMapper.getBundleID(filename);
 
-        byte[] bundleBytes = storageLocation.read(bundleID);
-        Bundle bundle = Bundle.deserializeBundle(bundleBytes);
+        Iterator<IStorage> it = storageLocations.iterator();
+        while(it.hasNext() && fetchedBundleID == null) {
+            IStorage storageLocation = it.next();
+            try {
+                String bundleID = storageLocation.readMetadata(filename);
+                if(bundleID != null)
+                {
+                    fetchedBundleID = bundleID;
+                }
+            }
+            catch (ConnectException e) {
+                e.printStackTrace();
+            }
+            catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+        }
+        return fetchedBundleID;
+    }
 
-        return bundleFromAWS;
+    private Bundle fetchBundle(String bundleID, String filename)
+    {
+        Bundle fetchedBundle = cachedBundles.get(bundleID);
+
+        Iterator<IStorage> it = storageLocations.iterator();
+        while(it.hasNext() && fetchedBundle == null) {
+            IStorage storageLocation = it.next();
+            try {
+                byte[] bundleBytes = storageLocation.read(bundleID);
+                Bundle bundle = Bundle.deserializeBundle(bundleBytes);
+                if(bundle != null && bundle.getFile(filename) == null) {
+                    throw new FileNotFoundException();
+                }
+                fetchedBundle = bundle;
+            } catch (DeserializationException e) {
+                e.printStackTrace();
+            } catch (ConnectException e) {
+                e.printStackTrace();
+            }
+            catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (NoSuchFileException e) {
+                e.printStackTrace();
+            }
+        }
+        return fetchedBundle;
     }
 
     @Override
@@ -148,6 +186,7 @@ public class BundleClient implements IBundleClient {
 
     private String generateBundleID()
     {
+        //todo: should we make the bundleID a sha-hash of the files?
         return UUID.randomUUID().toString();
     }
 
@@ -274,7 +313,7 @@ public class BundleClient implements IBundleClient {
         try {
             while (bundle != null) {
 
-                storageLocation.write(bundle.getBundleID(),bundle.serializeFiles());
+                storageLocation.write(bundle.getBundleID(),Bundle.serializeBundle(bundle));
                 bundle = pendingBundleActionsForStorage.popBundleReadyForUpload();
             }
         } catch (ConnectException e) {

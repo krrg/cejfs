@@ -3,10 +3,11 @@ package isrl.byu.edu.bundle;
 import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 
+import java.io.*;
 import java.util.Collection;
 import java.util.HashMap;
 
-public class Bundle {
+public class Bundle implements Serializable{
 
     private HashMap<String, BundleFileData> files;
     private String bundleID;
@@ -19,16 +20,62 @@ public class Bundle {
 
     public static byte[] serializeBundle(Bundle bundle) throws SerializationException
     {
-        throw new SerializationException("");
-        //todo:
-        return null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutput out = null;
+        byte[] bundleBytes = null;
+        try{
+            out = new ObjectOutputStream(bos);
+            out.writeObject(bundle);
+            out.flush();
+            bundleBytes = bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try{
+                bos.close();
+                return bundleBytes;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(bundleBytes == null)
+        {
+            throw new SerializationException("");
+        }
+
+        return bundleBytes;
     }
 
     public static Bundle deserializeBundle(byte[] data) throws DeserializationException
     {
-        throw new DeserializationException("");
-        //todo:
-        return null;
+        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        ObjectInput in = null;
+        Bundle bundle = null;
+        try{
+            in = new ObjectInputStream(bis);
+            Object o = in.readObject();
+            bundle = (Bundle)o;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            try{
+                if (in != null)
+                {
+                    in.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(bundle == null)
+        {
+            throw new DeserializationException("");
+        }
+        return bundle;
     }
 
     public Bundle(String bundleID, Collection<BundleFileData> preCommittedFiles)
@@ -81,4 +128,5 @@ public class Bundle {
     {
         return this.getBundleID().hashCode();
     }
+
 }

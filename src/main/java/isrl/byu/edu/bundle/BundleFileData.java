@@ -1,10 +1,9 @@
 package isrl.byu.edu.bundle;
-import java.sql.Timestamp;
+import java.io.Serializable;
 
-public class BundleFileData {
+public class BundleFileData implements Serializable {
     private String filename;
     private byte[] data;
-    private Timestamp lastModified;
 
     public String getFileName()
     {
@@ -18,13 +17,11 @@ public class BundleFileData {
     {
         return data.length;
     }
-    public Timestamp getLastModified() { return lastModified; }
 
     public BundleFileData(String filename, byte[] data)
     {
         this.filename = filename;
         this.data = data;
-        this.lastModified = new Timestamp(System.currentTimeMillis());
     }
 
     @Override
@@ -44,11 +41,6 @@ public class BundleFileData {
         }
 
         if (this.getFileSize() != otherBundleFileData.getFileSize())
-        {
-            return false;
-        }
-
-        if (this.getLastModified() != otherBundleFileData.getLastModified())
         {
             return false;
         }
