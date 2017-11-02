@@ -5,10 +5,7 @@ public class BundleFileData implements Serializable {
     private String filename;
     private byte[] data;
 
-    public String getFileName()
-    {
-        return filename;
-    }
+    public String getFileName() { return filename; }
     public byte[] getData()
     {
         return data;
@@ -18,8 +15,7 @@ public class BundleFileData implements Serializable {
         return data.length;
     }
 
-    public BundleFileData(String filename, byte[] data)
-    {
+    public BundleFileData(String filename, byte[] data) {
         this.filename = filename;
         this.data = data;
     }

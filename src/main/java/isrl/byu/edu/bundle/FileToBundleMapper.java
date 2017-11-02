@@ -1,6 +1,4 @@
 package isrl.byu.edu.bundle;
-
-import java.net.ConnectException;
 import java.util.*;
 
 public class FileToBundleMapper {
@@ -11,50 +9,42 @@ public class FileToBundleMapper {
     private HashMap<String, String> fileToBundleID = new HashMap<>();
     private HashMap<String, HashSet<String>>  bundleIDToFiles = new HashMap<>();
 
-    public String getBundleID(String filename)
-    {
+    public String getBundleID(String filename) {
         return fileToBundleID.get(filename);
     }
 
-    public HashSet<String> getFilesInBundle(String bundleID)
-    {
+    public HashSet<String> getFilesInBundle(String bundleID) {
         HashSet<String> filesInBundle = bundleIDToFiles.get(bundleID);
         return filesInBundle;
     }
-    private HashSet<String> addFileBundleMetadata(String bundleID, String filename)
-    {
-        HashSet<String> filesInBundle = bundleIDToFiles.get(bundleID);
-        if(filesInBundle == null)
-        {
-            filesInBundle = new HashSet<>();
-            bundleIDToFiles.put(bundleID, filesInBundle);
-        }
-        filesInBundle.add(filename);
-        return filesInBundle;
+    public boolean setFilesInBundle(String bundleID, HashSet<String> filesInBundle) {
+        boolean overwritten = bundleIDToFiles.containsKey(bundleID);
+        bundleIDToFiles.put(bundleID, filesInBundle);
+        return overwritten;
     }
-    public HashSet<String> getAndClearDeadBundleIDs()
-    {
+
+    ////////Dirty data retrieval for pushing to remote servers ////////
+    public HashSet<String> getAndClearDeadBundleIDs() {
         HashSet<String> bundlesToBeDeletedCopy = (HashSet<String>)bundlesToBeDeleted.clone();
         dirtyBundleMappings.clear();
         return bundlesToBeDeletedCopy;
     }
 
-    public HashSet<String> getAndClearDirtyBundleMappings()
-    {
+    public HashSet<String> getAndClearDirtyBundleMappings() {
         HashSet<String> dirtyBundleMappingsCopy = (HashSet<String>)dirtyBundleMappings.clone();
         dirtyBundleMappings.clear();
         return dirtyBundleMappingsCopy;
     }
 
-    public HashSet<String> getAndClearDirtyFileMappings()
-    {
+    public HashSet<String> getAndClearDirtyFileMappings() {
         HashSet<String> dirtyFileMappingsCopy = (HashSet<String>)dirtyFileMappings.clone();
         dirtyFileMappings.clear();
         return dirtyFileMappingsCopy;
     }
 
-    public boolean remapBundle(Bundle newBundle)
-    {
+    ////////Remaping bundle and files ////////
+
+    public boolean remapBundle(Bundle newBundle){
         if(newBundle == null)
         {
             return false;
@@ -63,8 +53,7 @@ public class FileToBundleMapper {
         for (BundleFileData bundleFileData:
                 newBundle.getFiles()) {
 
-            String oldBundleID = remapFile(bundleFileData.getFileName(), newBundle.getBundleID());
-            dirtyBundleMappings.add(oldBundleID);
+            remapFile(bundleFileData.getFileName(), newBundle.getBundleID());
         }
         dirtyBundleMappings.add(newBundle.getBundleID());
 
@@ -75,9 +64,12 @@ public class FileToBundleMapper {
     //2. set the bundle to file mapping
     //3. remove the old bundle to file mapping and queue it for deletion if needed
     //4. return the old bundle Id
-    private String remapFile(String filename, String bundleID)
-    {
+    public String remapFile(String filename, String bundleID) {
         String oldBundleID = fileToBundleID.put(filename, bundleID);
+        if(oldBundleID != null) {
+            dirtyBundleMappings.add(oldBundleID);
+        }
+
         if(oldBundleID == bundleID)
         {
             //its the same bundle
@@ -86,13 +78,23 @@ public class FileToBundleMapper {
 
         dirtyFileMappings.add(filename);
         cleanOldBundle(oldBundleID, filename);
-
         addFileBundleMetadata(bundleID, filename);
 
         return oldBundleID;
     }
-    private boolean cleanOldBundle(String oldBundleID, String filename)
-    {
+
+    private HashSet<String> addFileBundleMetadata(String bundleID, String filename) {
+        HashSet<String> filesInBundle = bundleIDToFiles.get(bundleID);
+        if(filesInBundle == null)
+        {
+            filesInBundle = new HashSet<>();
+            bundleIDToFiles.put(bundleID, filesInBundle);
+        }
+        filesInBundle.add(filename);
+        return filesInBundle;
+    }
+
+    private boolean cleanOldBundle(String oldBundleID, String filename) {
         boolean beginOldBundleDeletion =false;
         if(oldBundleID != null)
         {

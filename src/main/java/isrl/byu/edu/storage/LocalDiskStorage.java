@@ -5,6 +5,14 @@ import java.net.ConnectException;
 import java.nio.file.NoSuchFileException;
 
 public class LocalDiskStorage implements IStorage {
+
+    private PendingBundleActions pendingBundleActions = new PendingBundleActions();
+
+    @Override
+    public PendingBundleActions getPendingBundleActions() {
+        return pendingBundleActions;
+    }
+
     @Override
     public String getID() {
         return "local";
@@ -26,8 +34,8 @@ public class LocalDiskStorage implements IStorage {
     }
 
     @Override
-    public int writeMetadata(String key, String value) throws ConnectException {
-        return 0;
+    public String writeMetadata(String key, String value) throws ConnectException {
+        return null;
     }
 
     @Override
@@ -36,8 +44,8 @@ public class LocalDiskStorage implements IStorage {
     }
 
     @Override
-    public int deleteMetadata(String key) throws ConnectException {
-        return 0;
+    public String deleteMetadata(String key) throws ConnectException {
+        return null;
     }
 
     @Override

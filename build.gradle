@@ -43,6 +43,7 @@ dependencies {
     compile 'com.amazonaws:aws-java-sdk-s3'
 //    compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.218'
     compile 'io.lettuce:lettuce-core:5.0.0.RELEASE'
+    compile group: 'com.fasterxml', name: 'jackson-module-json-org', version: '0.9.1'
 
 }
 

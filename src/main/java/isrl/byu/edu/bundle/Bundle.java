@@ -6,6 +6,7 @@ import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import java.io.*;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.UUID;
 
 public class Bundle implements Serializable{
 
@@ -18,10 +19,24 @@ public class Bundle implements Serializable{
         return files.get(filename);
     }
 
-    public static byte[] serializeBundle(Bundle bundle) throws SerializationException
+    private String generateBundleID() {
+        //todo: should we make the bundleID a sha-hash of the files?
+        return UUID.randomUUID().toString();
+    }
+
+    public Bundle(Collection<BundleFileData> preCommittedFiles)
     {
+        this.bundleID = generateBundleID();
+
+        files = new HashMap<>();
+        for (BundleFileData bundleFileData: preCommittedFiles) {
+            files.put(bundleFileData.getFileName(), bundleFileData);
+        }
+    }
+
+    public static byte[] serializeBundle(Bundle bundle) throws SerializationException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutput out = null;
+        ObjectOutput out;
         byte[] bundleBytes = null;
         try{
             out = new ObjectOutputStream(bos);
@@ -46,9 +61,7 @@ public class Bundle implements Serializable{
 
         return bundleBytes;
     }
-
-    public static Bundle deserializeBundle(byte[] data) throws DeserializationException
-    {
+    public static Bundle deserializeBundle(byte[] data) throws DeserializationException {
         ByteArrayInputStream bis = new ByteArrayInputStream(data);
         ObjectInput in = null;
         Bundle bundle = null;
@@ -76,16 +89,6 @@ public class Bundle implements Serializable{
             throw new DeserializationException("");
         }
         return bundle;
-    }
-
-    public Bundle(String bundleID, Collection<BundleFileData> preCommittedFiles)
-    {
-        this.bundleID = bundleID;
-
-        files = new HashMap<>();
-        for (BundleFileData bundleFileData: preCommittedFiles) {
-            files.put(bundleFileData.getFileName(), bundleFileData);
-        }
     }
 
     @Override
