@@ -23,7 +23,8 @@ public class RedisMetadataClient implements IMetadataClient {
     public Optional<MetadataHandle> createFile(String path) {
         RedisCommands<String, String> commands = redis.connect().sync();
         if (commands.get(path) != null) {
-            return Optional.empty();
+            MetadataHandle metadataHandle = new MetadataHandle();
+            metadataHandle.set
         }
 
         return Optional.empty();
@@ -31,7 +32,7 @@ public class RedisMetadataClient implements IMetadataClient {
 
     @Override
     public Optional<MetadataHandle> createDirectory(String path) {
-        return null;
+        RedisCommands<String, String> commands = redis.connect().sync();
     }
 
     @Override

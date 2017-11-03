@@ -1,11 +1,7 @@
 package isrl.byu.edu.metadata;
 
 
-import jnr.ffi.Runtime;
-import jnr.ffi.Struct;
-import jnr.ffi.annotations.Meta;
 import ru.serce.jnrfuse.struct.FileStat;
-import ru.serce.jnrfuse.struct.Timespec;
 
 public class MetadataHandle {
 
