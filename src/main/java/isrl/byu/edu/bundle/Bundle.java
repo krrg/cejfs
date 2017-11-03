@@ -2,6 +2,7 @@ package isrl.byu.edu.bundle;
 
 import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
+import isrl.byu.edu.storage.FileTuple;
 
 import java.io.*;
 import java.util.Collection;
@@ -10,12 +11,12 @@ import java.util.UUID;
 
 public class Bundle implements Serializable{
 
-    private HashMap<String, BundleFileData> files;
+    private HashMap<String, FileTuple> files;
     private String bundleID;
 
     public String getBundleID() { return bundleID;}
-    public Collection<BundleFileData> getFiles() { return files.values(); }
-    public BundleFileData getFile(String filename){
+    public Collection<FileTuple> getFiles() { return files.values(); }
+    public FileTuple getFile(String filename){
         return files.get(filename);
     }
 
@@ -24,13 +25,13 @@ public class Bundle implements Serializable{
         return UUID.randomUUID().toString();
     }
 
-    public Bundle(Collection<BundleFileData> preCommittedFiles)
+    public Bundle(Collection<FileTuple> preCommittedFiles)
     {
         this.bundleID = generateBundleID();
 
         files = new HashMap<>();
-        for (BundleFileData bundleFileData: preCommittedFiles) {
-            files.put(bundleFileData.getFileName(), bundleFileData);
+        for (FileTuple fileTuple : preCommittedFiles) {
+            files.put(fileTuple.getFileName(), fileTuple);
         }
     }
 

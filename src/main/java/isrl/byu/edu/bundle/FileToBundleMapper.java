@@ -1,4 +1,6 @@
 package isrl.byu.edu.bundle;
+import isrl.byu.edu.storage.FileTuple;
+
 import java.util.*;
 
 public class FileToBundleMapper {
@@ -50,10 +52,10 @@ public class FileToBundleMapper {
             return false;
         }
 
-        for (BundleFileData bundleFileData:
+        for (FileTuple fileTuple :
                 newBundle.getFiles()) {
 
-            remapFile(bundleFileData.getFileName(), newBundle.getBundleID());
+            remapFile(fileTuple.getFileName(), newBundle.getBundleID());
         }
         dirtyBundleMappings.add(newBundle.getBundleID());
 

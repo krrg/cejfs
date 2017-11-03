@@ -2,8 +2,7 @@ package isrl.byu.edu.bundle;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
-import isrl.byu.edu.storage.IStorage;
-import isrl.byu.edu.storage.PendingBundleActions;
+import isrl.byu.edu.storage.*;
 import isrl.byu.edu.utils.JSON;
 
 import java.io.FileNotFoundException;
@@ -15,11 +14,12 @@ import java.util.*;
 public class BundleClient implements IBundleClient {
 
     private FileToBundleMapper fileToBundleMapper = new FileToBundleMapper();
-    private LinkedHashMap<String, BundleFileData> queuedFileSaves = new LinkedHashMap<>();
+    private LinkedHashMap<String, FileTuple> queuedFileSaves = new LinkedHashMap<>();
     private int queuedFileSavesByteSize = 0;
 
     private HashMap<String, Bundle> cachedBundles = new HashMap<>();
-    private List<IStorage> storageLocations = new LinkedList<>();
+    private List<IDataStorage> dataLocations = new LinkedList<>();
+    private List<IMetadataStorage> metadataLocations = new LinkedList<>();
 
     final int MEGABYTE = 1000000;
     final int MAX_FILES_PER_BUNDLE = 20;
@@ -27,16 +27,24 @@ public class BundleClient implements IBundleClient {
 
     public BundleClient() {
     }
-    public boolean addRemoteLocation(IStorage iStorage) {
-        boolean alreadyExists = storageLocations.contains(iStorage);
+    public boolean addDataLocation(IDataStorage iDataStorage) {
+        boolean alreadyExists = dataLocations.contains(iDataStorage);
         if(alreadyExists)
         {
             return false;
         }
-        storageLocations.add(iStorage);
+        dataLocations.add(iDataStorage);
         return true;
     }
-
+    public boolean addMetadataLocation(IMetadataStorage iMetadataStorage) {
+        boolean alreadyExists = metadataLocations.contains(iMetadataStorage);
+        if(alreadyExists)
+        {
+            return false;
+        }
+        metadataLocations.add(iMetadataStorage);
+        return true;
+    }
 
     /////////write data////////
 
@@ -47,11 +55,11 @@ public class BundleClient implements IBundleClient {
     @Override
     public boolean saveFile(byte[] bytes, String filename) {
 
-        BundleFileData bundleFile = new BundleFileData(filename,bytes);
+        FileTuple bundleFile = new FileTuple(filename,bytes);
         if(queuedFileSaves.containsKey(filename)){
 
-           BundleFileData oldBundleFileData = queuedFileSaves.remove(filename);
-           queuedFileSavesByteSize -= oldBundleFileData.getFileSize();
+           FileTuple oldFileTuple = queuedFileSaves.remove(filename);
+           queuedFileSavesByteSize -= oldFileTuple.getFileSize();
         }
 
         queuedFileSaves.put(filename, bundleFile);
@@ -84,7 +92,7 @@ public class BundleClient implements IBundleClient {
     public byte[] readFile(String filename) throws NoSuchFileException, FileNotFoundException{
 
         //read from pre committed local data
-        BundleFileData preCommittedFile = queuedFileSaves.get(filename);
+        FileTuple preCommittedFile = queuedFileSaves.get(filename);
         //todo: this assumes preCommittedFiles are always the most upto date.
         if(preCommittedFile != null) {
             return preCommittedFile.getData();
@@ -118,18 +126,18 @@ public class BundleClient implements IBundleClient {
         if(cachedBundles.get(bundleID)==null) {
             cachedBundles.put(bundleID, bundle);
         }
-        BundleFileData committedFile = cachedBundles.get(bundleID).getFile(filename);
+        FileTuple committedFile = cachedBundles.get(bundleID).getFile(filename);
 
         return committedFile.getData();
     }
     private String fetchBundleID(String filename) {
         String fetchedBundleID = fileToBundleMapper.getBundleID(filename);
 
-        Iterator<IStorage> it = storageLocations.iterator();
+        Iterator<IMetadataStorage> it = metadataLocations.iterator();
         while(it.hasNext() && fetchedBundleID == null) {
-            IStorage storageLocation = it.next();
+            IMetadataStorage metadataLocation = it.next();
             try {
-                fetchedBundleID = storageLocation.readMetadata(filename);
+                fetchedBundleID = metadataLocation.readMetadata(filename);
             }
             catch (ConnectException e) {
                 e.printStackTrace();
@@ -143,11 +151,11 @@ public class BundleClient implements IBundleClient {
     private HashSet<String> fetchFilesInBundle(String bundleID) {
         HashSet<String> fileInBundle = fileToBundleMapper.getFilesInBundle(bundleID);
 
-        Iterator<IStorage> it = storageLocations.iterator();
+        Iterator<IMetadataStorage> it = metadataLocations.iterator();
         while(it.hasNext() && fileInBundle == null) {
-            IStorage storageLocation = it.next();
+            IMetadataStorage metadataLocation = it.next();
             try {
-                String fileInBundleJson = storageLocation.readMetadata(bundleID);
+                String fileInBundleJson = metadataLocation.readMetadata(bundleID);
                 fileInBundle = JSON.JsonToSetOfStrings(fileInBundleJson);
             }
             catch (ConnectException e) {
@@ -165,11 +173,11 @@ public class BundleClient implements IBundleClient {
     private Bundle fetchBundle(String bundleID, String filename) {
         Bundle fetchedBundle = cachedBundles.get(bundleID);
 
-        Iterator<IStorage> it = storageLocations.iterator();
+        Iterator<IDataStorage> it = dataLocations.iterator();
         while(it.hasNext() && fetchedBundle == null) {
-            IStorage storageLocation = it.next();
+            IDataStorage dataLocation = it.next();
             try {
-                byte[] bundleBytes = storageLocation.read(bundleID);
+                byte[] bundleBytes = dataLocation.read(bundleID);
                 fetchedBundle = Bundle.deserializeBundle(bundleBytes);
                 if(fetchedBundle != null && fetchedBundle.getFile(filename) == null) {
                     throw new FileNotFoundException();
@@ -235,143 +243,149 @@ public class BundleClient implements IBundleClient {
     /////////queue and push changes to remote locations////////
 
     private void queueChangesToStorage(Bundle newBundle) {
-        HashSet<String> dirtyBundleMappings = fileToBundleMapper.getAndClearDirtyBundleMappings();
-        HashSet<String> dirtyFileMappings = fileToBundleMapper.getAndClearDirtyFileMappings();
-        HashSet<String> deadBundleIDs = fileToBundleMapper.getAndClearDeadBundleIDs();
 
+        HashSet<MetadataTuple> metadataWrites = new HashSet<>();
+        HashSet<String> metadataDeletes = new HashSet<>();
+
+        HashSet<FileTuple> dataWrites = new HashSet<>();
+        HashSet<String> dataDeletes = new HashSet<>();
+
+        HashSet<String> dirtyBundleMappings = fileToBundleMapper.getAndClearDirtyBundleMappings();
+
+        for (String dirtyBundleMapping:dirtyBundleMappings) {
+            try {
+                String jsonList = JSON.SetOfStringsToJson(fileToBundleMapper.getFilesInBundle(dirtyBundleMapping));
+                metadataWrites.add(new MetadataTuple(dirtyBundleMapping, jsonList));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+
+        HashSet<String> dirtyFileMappings = fileToBundleMapper.getAndClearDirtyFileMappings();
+
+        for (String dirtyFileMapping:dirtyFileMappings) {
+            String bundleID = fileToBundleMapper.getBundleID(dirtyFileMapping);
+            metadataWrites.add(new MetadataTuple(dirtyFileMapping, bundleID));
+        }
+
+        HashSet<String> deadBundleIDs = fileToBundleMapper.getAndClearDeadBundleIDs();
         cleanDeadCachedBundles(deadBundleIDs);
-        Iterator<IStorage> it = storageLocations.iterator();
-        while(it.hasNext()) {
-            IStorage storageLocation = it.next();
-            PendingBundleActions pendingBundleActions = storageLocation.getPendingBundleActions();
-            pendingBundleActions.appendDirtyBundleMappings(dirtyBundleMappings);
-            pendingBundleActions.appendDirtyFileMappings(dirtyFileMappings);
-            pendingBundleActions.appendDeadBundleIDs(deadBundleIDs);
-            pendingBundleActions.appendBundleReadyForUpload(newBundle);
+
+        metadataDeletes.addAll(deadBundleIDs);
+        dataDeletes.addAll(deadBundleIDs);
+
+        dataWrites.add(new FileTuple(newBundle.getBundleID(), Bundle.serializeBundle(newBundle)));
+
+        Iterator<IMetadataStorage> itMetadata = metadataLocations.iterator();
+        while(itMetadata.hasNext()) {
+            IMetadataStorage metadataLocation = itMetadata.next();
+            PendingMetadataActions pendingDataActions = metadataLocation.getPendingActions();
+            pendingDataActions.queueWrites(metadataWrites);
+            pendingDataActions.queueDeletes(metadataDeletes);
+        }
+
+        Iterator<IDataStorage> itData = dataLocations.iterator();
+        while(itData.hasNext()) {
+            IDataStorage dataLocation = itData.next();
+            PendingDataActions pendingDataActions = dataLocation.getPendingActions();
+            pendingDataActions.queueWrites(dataWrites);
+            pendingDataActions.queueDeletes(dataDeletes);
         }
     }
     private boolean pushChangesToStorage() {
         boolean everythingFinished = true;
-        Iterator<IStorage> it = storageLocations.iterator();
-        while(it.hasNext()) {
-            IStorage storageLocation = it.next();
-            if(!pushDirtyFileMappingsToStorageLocation(storageLocation))
-            {
-                //if we lose connection, lets stop trying this storageLocation
+
+        Iterator<IMetadataStorage> itMetadata = metadataLocations.iterator();
+        while(itMetadata.hasNext()) {
+            IMetadataStorage metadataLocation = itMetadata.next();
+            if(!pushMetadataWritesToRemote(metadataLocation)) {
                 everythingFinished = false;
-                continue;
             }
-            if(!pushDirtyBundleMappingsToStorageLocation(storageLocation))
-            {
-                //if we lose connection, lets stop trying this storageLocation
+            if(!pushMetadataDeletesToRemote(metadataLocation)) {
                 everythingFinished = false;
-                continue;
             }
-            if(!deleteDeadBundlesToStorageLocation(storageLocation))
-            {
-                //if we lose connection, lets stop trying this storageLocation
+        }
+
+        Iterator<IDataStorage> itData = dataLocations.iterator();
+        while(itData.hasNext()) {
+            IDataStorage dataLocation = itData.next();
+            if(!pushDataWritesToRemote(dataLocation)) {
                 everythingFinished = false;
-                continue;
             }
-            if(!pushBundleToStorageLocation(storageLocation))
-            {
-                //if we lose connection, lets stop trying this storageLocation
+            if(!pushDataDeletesToRemote(dataLocation)) {
                 everythingFinished = false;
-                continue;
             }
         }
 
         return everythingFinished;
     }
-    private boolean pushDirtyFileMappingsToStorageLocation(IStorage storageLocation){
-        PendingBundleActions pendingBundleActions = storageLocation.getPendingBundleActions();
+    private boolean pushDataWritesToRemote(IDataStorage dataLocation){
+        PendingDataActions pendingDataActions = dataLocation.getPendingActions();
         //update file mapping
-        String dirtyFile = pendingBundleActions.popDirtyFileMapping();
+        FileTuple dirtyFile = pendingDataActions.popWrite();
         try {
             while (dirtyFile != null) {
-                storageLocation.writeMetadata(dirtyFile, fileToBundleMapper.getBundleID(dirtyFile));
-                dirtyFile = pendingBundleActions.popDirtyFileMapping();
+                dataLocation.write(dirtyFile.getFileName(), dirtyFile.getData());
+                dirtyFile = pendingDataActions.popWrite();
             }
         } catch (ConnectException e) {
             e.printStackTrace();
-
             //replace the unsuccessful save back into the pending data structure
-            pendingBundleActions.appendDirtyFileMapping(dirtyFile);
-            //stop trying to contact this storage device
+            pendingDataActions.queueWrite(dirtyFile);
             return false;
         }
         return true;
     }
-    private boolean pushDirtyBundleMappingsToStorageLocation(IStorage storageLocation){
-        PendingBundleActions pendingBundleActions = storageLocation.getPendingBundleActions();
-        //update bundle mapping
-        String dirtyBundle = pendingBundleActions.popDirtyBundleMapping();
+    private boolean pushDataDeletesToRemote(IDataStorage dataLocation){
+        PendingDataActions pendingDataActions = dataLocation.getPendingActions();
+        //update file mapping
+        String deadFile = pendingDataActions.popDelete();
         try {
-            while (dirtyBundle != null) {
-
-                String jsonList = JSON.SetOfStringsToJson(fileToBundleMapper.getFilesInBundle(dirtyBundle));
-
-                storageLocation.writeMetadata(dirtyBundle, jsonList);
-                dirtyBundle = pendingBundleActions.popDirtyBundleMapping();
+            while (deadFile != null) {
+                dataLocation.delete(deadFile);
+                deadFile = pendingDataActions.popDelete();
             }
         } catch (ConnectException e) {
             e.printStackTrace();
-
             //replace the unsuccessful save back into the pending data structure
-            pendingBundleActions.appendDirtyBundleMapping(dirtyBundle);
-            //stop trying to contact this storage device
-            return false;
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-
-            //replace the unsuccessful save back into the pending data structure
-            pendingBundleActions.appendDirtyBundleMapping(dirtyBundle);
-            //stop trying to contact this storage device
+            pendingDataActions.queueDelete(deadFile);
             return false;
         }
         return true;
     }
-    private boolean deleteDeadBundlesToStorageLocation(IStorage storageLocation){
-        PendingBundleActions pendingBundleActions = storageLocation.getPendingBundleActions();
-        //delete dead bundles
-        String deadBundle= pendingBundleActions.popDeadBundleID();
+    private boolean pushMetadataWritesToRemote(IMetadataStorage metadataLocation){
+        PendingMetadataActions pendingDataActions = metadataLocation.getPendingActions();
+        //update file mapping
+        MetadataTuple dirtyMetadata = pendingDataActions.popWrite();
         try {
-            while (deadBundle != null) {
-
-                storageLocation.delete(deadBundle);
-                storageLocation.deleteMetadata(deadBundle);
-                deadBundle = pendingBundleActions.popDeadBundleID();
+            while (dirtyMetadata != null) {
+                metadataLocation.writeMetadata(dirtyMetadata.getKey(), dirtyMetadata.getValue());
+                dirtyMetadata = pendingDataActions.popWrite();
             }
         } catch (ConnectException e) {
             e.printStackTrace();
-
             //replace the unsuccessful save back into the pending data structure
-            pendingBundleActions.appendDeadBundleID(deadBundle);
-            //stop trying to contact this storage device
+            pendingDataActions.queueWrite(dirtyMetadata);
             return false;
         }
         return true;
     }
-    private boolean pushBundleToStorageLocation(IStorage storageLocation){
-        PendingBundleActions pendingBundleActions = storageLocation.getPendingBundleActions();
-        //delete dead bundles
-        Bundle bundle = pendingBundleActions.popBundleReadyForUpload();
+    private boolean pushMetadataDeletesToRemote(IMetadataStorage metadataLocation){
+        PendingMetadataActions pendingDataActions = metadataLocation.getPendingActions();
+        //update file mapping
+        String deadMetadata = pendingDataActions.popDelete();
         try {
-            while (bundle != null) {
-                storageLocation.write(bundle.getBundleID(),Bundle.serializeBundle(bundle));
-                bundle = pendingBundleActions.popBundleReadyForUpload();
+            while (deadMetadata != null) {
+                metadataLocation.deleteMetadata(deadMetadata);
+                deadMetadata = pendingDataActions.popDelete();
             }
         } catch (ConnectException e) {
             e.printStackTrace();
 
             //replace the unsuccessful save back into the pending data structure
-            pendingBundleActions.appendBundleReadyForUpload(bundle);
-            //stop trying to contact this storage device
+            pendingDataActions.queueDelete(deadMetadata);
             return false;
         }
         return true;
     }
-
-
-
 }

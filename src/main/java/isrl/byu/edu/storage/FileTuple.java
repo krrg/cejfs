@@ -1,7 +1,7 @@
-package isrl.byu.edu.bundle;
+package isrl.byu.edu.storage;
 import java.io.Serializable;
 
-public class BundleFileData implements Serializable {
+public class FileTuple implements Serializable {
     private String filename;
     private byte[] data;
 
@@ -15,7 +15,7 @@ public class BundleFileData implements Serializable {
         return data.length;
     }
 
-    public BundleFileData(String filename, byte[] data) {
+    public FileTuple(String filename, byte[] data) {
         this.filename = filename;
         this.data = data;
     }
@@ -31,12 +31,12 @@ public class BundleFileData implements Serializable {
         if (getClass() != other.getClass()) {
             return false;
         }
-        BundleFileData otherBundleFileData = (BundleFileData) other;
-        if (this.getFileName() != otherBundleFileData.getFileName()) {
+        FileTuple otherFileTuple = (FileTuple) other;
+        if (this.getFileName() != otherFileTuple.getFileName()) {
             return false;
         }
 
-        if (this.getFileSize() != otherBundleFileData.getFileSize())
+        if (this.getFileSize() != otherFileTuple.getFileSize())
         {
             return false;
         }

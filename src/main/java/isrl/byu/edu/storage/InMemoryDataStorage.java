@@ -3,49 +3,41 @@ package isrl.byu.edu.storage;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NoSuchFileException;
+import java.util.HashMap;
 
-public class AWSStorage implements IStorage{
+public class InMemoryDataStorage implements IDataStorage {
 
-    private PendingBundleActions pendingBundleActions = new PendingBundleActions();
+    private HashMap<String, byte[]> cachedBundleBytes = new HashMap<>();
+    private PendingDataActions pendingActions = new PendingDataActions();
 
     @Override
     public String getID() {
-        return "aws";
+        return "memoryData";
     }
 
     @Override
-    public PendingBundleActions getPendingBundleActions() {
-        return pendingBundleActions;
+    public PendingDataActions getPendingActions() {
+        return pendingActions;
     }
-
     @Override
     public int write(String filename, byte[] data) throws ConnectException {
-        return 0;
+        cachedBundleBytes.put(filename, data);
+        return data.length;
     }
 
     @Override
     public byte[] read(String filename) throws FileNotFoundException, NoSuchFileException, ConnectException {
-        return new byte[0];
+        if(!cachedBundleBytes.containsKey(filename))
+        {
+            throw new FileNotFoundException();
+        }
+
+        return cachedBundleBytes.get(filename);
     }
 
     @Override
     public boolean delete(String filename) throws ConnectException {
-        return false;
-    }
-
-    @Override
-    public String writeMetadata(String key, String value) throws ConnectException {
-        return null;
-    }
-
-    @Override
-    public String readMetadata(String key) throws NoSuchFieldException, ConnectException {
-        return null;
-    }
-
-    @Override
-    public String deleteMetadata(String key) throws ConnectException {
-        return null;
+        return cachedBundleBytes.remove(filename) != null;
     }
 
     @Override
@@ -59,7 +51,7 @@ public class AWSStorage implements IStorage{
         if (getClass() != other.getClass()) {
             return false;
         }
-        AWSStorage otherStorage = (AWSStorage) other;
+        InMemoryDataStorage otherStorage = (InMemoryDataStorage) other;
         if (this.getID() != otherStorage.getID()) {
             return false;
         }
@@ -71,5 +63,6 @@ public class AWSStorage implements IStorage{
     {
         return this.getID().hashCode();
     }
+
 
 }

@@ -2,8 +2,7 @@ package isrl.byu.edu;
 
 import isrl.byu.edu.bundle.BundleClient;
 import isrl.byu.edu.bundle.IBundleClient;
-import isrl.byu.edu.storage.InMemoryStorage;
-import isrl.byu.edu.storage.IStorage;
+import isrl.byu.edu.storage.*;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -12,6 +11,7 @@ import java.util.Random;
 
 public class Main {
 
+    static String redisURL = "redis://127.0.0.1:6379/0";
     public static void main(String[] args) {
 
         //HelloS3 S3 = new HelloS3();
@@ -32,18 +32,29 @@ public class Main {
 
         Random r = new Random();
 
-        IStorage inMemoryStorage = new InMemoryStorage();
+        IDataStorage inMemoryDataStorage = new InMemoryDataStorage();
+        IDataStorage awsDataStorage = new AWSDataStorage();
+
+        IMetadataStorage inMemoryMetadataStorage = new InMemoryMetadataStorage();
+        IMetadataStorage redisMetaDataStorage = new RedisMetadataStorage(redisURL);
+
         IBundleClient bundleClient = new BundleClient();
-        bundleClient.addRemoteLocation(inMemoryStorage);
+        bundleClient.addDataLocation(inMemoryDataStorage);
+        //bundleClient.addDataLocation(awsDataStorage);
+        bundleClient.addMetadataLocation(inMemoryMetadataStorage);
+        //bundleClient.addMetadataLocation(redisMetaDataStorage);
+
+        //create a new local cache, simulating a restart
+        IBundleClient bundleClient2 = new BundleClient();
+        bundleClient2.addDataLocation(inMemoryDataStorage);
+        //bundleClient2.addDataLocation(awsDataStorage);
+        bundleClient2.addMetadataLocation(inMemoryMetadataStorage);
+        //bundleClient2.addMetadataLocation(redisMetaDataStorage);
 
         int FILES_TO_CREATE = 50;
         for(int i = 0; i < FILES_TO_CREATE; i++) {
             saveFile(bundleClient, generateRandomBytes(r), String.valueOf(i));
         }
-
-        //create a new local cache, simulating a restart
-        IBundleClient bundleClient2 = new BundleClient();
-        bundleClient2.addRemoteLocation(inMemoryStorage);
 
         // attempt to read files. See if it works
         for(int i = 0; i < FILES_TO_CREATE; i++) {
@@ -71,13 +82,24 @@ public class Main {
 
         Random r = new Random();
 
-        IStorage inMemoryStorage = new InMemoryStorage();
+        IDataStorage inMemoryDataStorage = new InMemoryDataStorage();
+        IDataStorage awsDataStorage = new AWSDataStorage();
+
+        IMetadataStorage inMemoryMetadataStorage = new InMemoryMetadataStorage();
+        IMetadataStorage redisMetaDataStorage = new RedisMetadataStorage(redisURL);
+
         IBundleClient bundleClient = new BundleClient();
-        bundleClient.addRemoteLocation(inMemoryStorage);
+        bundleClient.addDataLocation(inMemoryDataStorage);
+        //bundleClient.addDataLocation(awsDataStorage);
+        bundleClient.addMetadataLocation(inMemoryMetadataStorage);
+        //bundleClient.addMetadataLocation(redisMetaDataStorage);
 
         //multiple users
         IBundleClient bundleClient2 = new BundleClient();
-        bundleClient2.addRemoteLocation(inMemoryStorage);
+        bundleClient2.addDataLocation(inMemoryDataStorage);
+        //bundleClient2.addDataLocation(awsDataStorage);
+        bundleClient2.addMetadataLocation(inMemoryMetadataStorage);
+        //bundleClient2.addMetadataLocation(redisMetaDataStorage);
 
         int FILES_TO_CREATE = 40;
         for(int i = 0; i < FILES_TO_CREATE; i++) {
@@ -106,24 +128,32 @@ public class Main {
 
         Random r = new Random();
 
-        IStorage inMemoryStorage = new InMemoryStorage();
+        IDataStorage inMemoryDataStorage = new InMemoryDataStorage();
+        IDataStorage awsDataStorage = new AWSDataStorage();
+
+        IMetadataStorage inMemoryMetadataStorage = new InMemoryMetadataStorage();
+        IMetadataStorage redisMetaDataStorage = new RedisMetadataStorage(redisURL);
+
         IBundleClient bundleClient = new BundleClient();
-        bundleClient.addRemoteLocation(inMemoryStorage);
+        bundleClient.addDataLocation(inMemoryDataStorage);
+        //bundleClient.addDataLocation(awsDataStorage);
+        bundleClient.addMetadataLocation(inMemoryMetadataStorage);
+        //bundleClient.addMetadataLocation(redisMetaDataStorage);
 
         int FILES_TO_CREATE = 100;
         for(int i = 0; i < FILES_TO_CREATE; i++) {
-            saveFile(bundleClient, generateRandomBytes(r), String.valueOf(i));
+            saveFile(bundleClient, generateRandomBytes(r), String.valueOf(i++));
         }
 
         //see if partial bundle changes update correctly
         for(int i = 0; i < 10; i++) {
-            saveFile(bundleClient, generateRandomBytes(r), String.valueOf(i));
+            saveFile(bundleClient, generateRandomBytes(r), String.valueOf(i++));
         }
         bundleClient.flush();
 
         //save them again to rebundle
         for(int i = 0; i < FILES_TO_CREATE; i++) {
-            saveFile(bundleClient, generateRandomBytes(r), String.valueOf(i));
+            saveFile(bundleClient, generateRandomBytes(r), String.valueOf(i++));
         }
 
         bundleClient.flush();

@@ -5,45 +5,19 @@ import java.net.ConnectException;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 
-public class InMemoryStorage implements IStorage {
+public class InMemoryMetadataStorage implements IMetadataStorage {
 
-    private HashMap<String, byte[]> cachedBundleBytes = new HashMap<>();
     private HashMap<String, String> metaDataMapper = new HashMap<>();
-    private PendingBundleActions pendingBundleActions = new PendingBundleActions();
+    private PendingMetadataActions pendingActions = new PendingMetadataActions();
 
     @Override
     public String getID() {
-        return "memory";
+        return "memoryMetadata";
     }
 
     @Override
-    public PendingBundleActions getPendingBundleActions() {
-        return pendingBundleActions;
-    }
-
-    @Override
-    public int write(String filename, byte[] data) throws ConnectException {
-        cachedBundleBytes.put(filename, data);
-        return data.length;
-    }
-
-    @Override
-    public byte[] read(String filename) throws FileNotFoundException, NoSuchFileException, ConnectException {
-        if(!metaDataMapper.containsKey(filename))
-        {
-            throw new NoSuchFileException("");
-        }
-        if(!cachedBundleBytes.containsKey(filename))
-        {
-            throw new FileNotFoundException();
-        }
-
-        return cachedBundleBytes.get(filename);
-    }
-
-    @Override
-    public boolean delete(String filename) throws ConnectException {
-        return cachedBundleBytes.remove(filename) != null;
+    public PendingMetadataActions getPendingActions() {
+        return pendingActions;
     }
 
     @Override
@@ -76,7 +50,7 @@ public class InMemoryStorage implements IStorage {
         if (getClass() != other.getClass()) {
             return false;
         }
-        InMemoryStorage otherStorage = (InMemoryStorage) other;
+        InMemoryMetadataStorage otherStorage = (InMemoryMetadataStorage) other;
         if (this.getID() != otherStorage.getID()) {
             return false;
         }
