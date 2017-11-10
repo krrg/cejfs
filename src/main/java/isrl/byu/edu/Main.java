@@ -7,11 +7,13 @@ import isrl.byu.edu.storage.*;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 import java.util.Random;
 
 public class Main {
 
     static String redisURL = "redis://127.0.0.1:6379/0";
+
     public static void main(String[] args) {
 
         //HelloS3 S3 = new HelloS3();
@@ -22,9 +24,18 @@ public class Main {
         //}
 
         System.out.println("hello world");
-        runBundleTest1();
-        runBundleTest2();
-        runBundleTest3();
+//        runBundleTest1();
+//        runBundleTest2();
+//        runBundleTest3();
+
+        CejfsFuseFS fs = new CejfsFuseFS(null, null);
+
+        try {
+            fs.mount(Paths.get("/tmp/cejfs"), true, false);
+        } finally {
+            fs.umount(); // Could they not spell "unmount"
+        }
+
     }
 
     private static void runBundleTest1() {
