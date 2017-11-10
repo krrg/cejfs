@@ -65,6 +65,7 @@ public class FileProxy extends FusePath {
 
     int write(Pointer buffer, long bufSize, long writeOffset) {
         if (writeOffset > 0) {
+            System.out.println("Write offset was: " + writeOffset);
             throw new UnsupportedOperationException("Write offset cannot be non-zero");
         }
 
