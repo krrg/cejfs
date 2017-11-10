@@ -8,6 +8,7 @@ import ru.serce.jnrfuse.struct.FuseContext;
 public abstract class FusePath {
 
     private String name;
+    private String fullName;
     private DirectoryProxy parent;
 
     private IMetadataClient metadataClient;
@@ -21,6 +22,12 @@ public abstract class FusePath {
     FusePath(String name, DirectoryProxy parent, ProxyParameters proxyParameters) {
         this.name = name;
         this.parent = parent;
+
+        if (parent == null) {
+            this.fullName = name;
+        } else {
+            this.fullName = parent.getFullName() + "/" + name;
+        }
 
         this.metadataClient = proxyParameters.getMetadataClient();
         this.bundleClient = proxyParameters.getBundleClient();
@@ -72,6 +79,8 @@ public abstract class FusePath {
     protected String getName() {
         return this.name;
     }
+
+    protected String getFullName() { return this.fullName; }
 
     protected void setParent(DirectoryProxy path) {
         this.parent = path;

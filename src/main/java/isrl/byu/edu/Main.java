@@ -28,7 +28,11 @@ public class Main {
 //        runBundleTest2();
 //        runBundleTest3();
 
-        CejfsFuseFS fs = new CejfsFuseFS(null, null);
+        BundleClient bundleClient = new BundleClient();
+        bundleClient.addDataLocation(new InMemoryDataStorage());
+        bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
+
+        CejfsFuseFS fs = new CejfsFuseFS(null, bundleClient);
 
         try {
             fs.mount(Paths.get("/tmp/cejfs"), true, false);
@@ -173,15 +177,7 @@ public class Main {
 
     private static byte[] readFile(IBundleClient bundleClient, String filename) {
         byte[] fileBytes = null;
-        try {
-            fileBytes = bundleClient.readFile (filename);
-        } catch (NoSuchFileException e) {
-            e.printStackTrace();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (ConnectException e) {
-            e.printStackTrace();
-        }
+        fileBytes = bundleClient.readFile (filename);
         return fileBytes;
     }
 
