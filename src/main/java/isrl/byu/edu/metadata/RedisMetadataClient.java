@@ -2,6 +2,7 @@ package isrl.byu.edu.metadata;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.sync.RedisCommands;
+import isrl.byu.edu.utils.FilePathUtils;
 
 import javax.swing.text.html.Option;
 import java.util.List;
@@ -34,7 +35,11 @@ public class RedisMetadataClient implements IMetadataClient {
     }
 
     @Override
-    public boolean add(String parent, String child, MetadataHandle handle) {
+    public boolean addChild(String fullPath, MetadataHandle handle) {
+
+        String parent = FilePathUtils.getParentFullPath(fullPath);
+        String child = FilePathUtils.getFileName(fullPath);
+
         RedisCommands<String, String> rediscx = redis.connect().sync();
 
         String existingChildMetadataKey = rediscx.hget(parent, child);
@@ -58,19 +63,33 @@ public class RedisMetadataClient implements IMetadataClient {
     }
 
     @Override
-    public boolean remove(String parent, String child) {
+    public boolean removeChild(String fullPath) {
         // Is it a directory?
-        String key = parent + "/" + child;
+        String key = fullPath;
 
         if (! this.listChildren(key).isEmpty()) {
 
         }
 
+        return false;    }
+
+    @Override
+    public boolean renameFolder(String fullPath, String newName) {
         return false;
     }
 
     @Override
-    public List<MetadataHandle> listChildren(String parent) {
+    public List<String> listChildren(String parent) {
         return null;
+    }
+
+    @Override
+    public boolean updateFilesize(String fullPath, long fileSize) {
+        return false;
+    }
+
+    @Override
+    public boolean renameFile(String fullPath, String newName) {
+        return false;
     }
 }

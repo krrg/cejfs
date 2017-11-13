@@ -1,61 +1,30 @@
 package isrl.byu.edu;
 
-import isrl.byu.edu.bundle.IBundleClient;
-import isrl.byu.edu.metadata.IMetadataClient;
+import isrl.byu.edu.metadata.MetadataHandle;
+import isrl.byu.edu.utils.FilePathUtils;
 import jnr.ffi.Pointer;
+import jnr.ffi.Runtime;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class DirectoryProxy extends FusePath {
 
-    List<FusePath> contents = new ArrayList<>();
-
-    DirectoryProxy(String name, ProxyParameters proxyParameters) {
-        super(name, proxyParameters);
+    DirectoryProxy(String fullPath, ProxyParameters proxyParameters) {
+        super(fullPath, proxyParameters);
     }
 
-    DirectoryProxy(String name, DirectoryProxy parent, ProxyParameters proxyParameters) {
-        super(name, parent, proxyParameters);
+    DirectoryProxy(String name, String parentFullPath, ProxyParameters proxyParameters) {
+        super(FilePathUtils.getFullPath(parentFullPath, name), proxyParameters);
     }
 
     public synchronized void add(FusePath p) {
-        contents.add(p);
-        p.setParent(this);
-    }
+        FileStat fileStat = new FileStat(Runtime.getSystemRuntime());
+        p.getattr(fileStat);
+        MetadataHandle metadataHandle = new MetadataHandle(fileStat);
 
-    protected synchronized void deleteChild(FusePath child) {
-        contents.remove(child);
-    }
-
-    @Override
-    protected FusePath find(String path) {
-        if (super.find(path) != null) {
-            return super.find(path);
-        }
-        while (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        synchronized (this) {
-            if (!path.contains("/")) {
-                for (FusePath p : contents) {
-                    if (p.getName().equals(path)) {
-                        return p;
-                    }
-                }
-                return null;
-            }
-            String nextName = path.substring(0, path.indexOf("/"));
-            String rest = path.substring(path.indexOf("/"));
-            for (FusePath p : contents) {
-                if (p.getName().equals(nextName)) {
-                    return p.find(rest);
-                }
-            }
-        }
-        return null;
+        this.getMetadataClient().addChild(p.getFullPath(),metadataHandle);
     }
 
     @Override
@@ -65,17 +34,23 @@ public class DirectoryProxy extends FusePath {
         stat.st_gid.set(getContext().pid.get());
     }
 
+    @Override
+    protected void rename(String newName) {
+        this.getMetadataClient().renameFolder(getFullPath(), newName);
+    }
+
     synchronized void mkdir(String lastComponent) {
-        contents.add(new DirectoryProxy(lastComponent, this, this.getProxyParameters()));
+        this.add(new DirectoryProxy(lastComponent, this.getFullPath(), this.getProxyParameters()));
     }
 
     synchronized void mkfile(String lastComponent) {
-        contents.add(new FileProxy(lastComponent, this, this.getProxyParameters()));
+        this.add(new FileProxy(lastComponent, this.getFullPath(), this.getProxyParameters()));
     }
 
     public synchronized void read(Pointer buf, FuseFillDir filler) {
-        for (FusePath p : contents) {
-            filler.apply(buf, p.getName(), null, 0);
+        List<String> children = this.getMetadataClient().listChildren(this.getFullPath());
+        for (String fileName : children) {
+            filler.apply(buf, fileName, null, 0);
         }
     }
 }

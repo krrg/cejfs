@@ -2,32 +2,27 @@ package isrl.byu.edu;
 
 import isrl.byu.edu.bundle.IBundleClient;
 import isrl.byu.edu.metadata.IMetadataClient;
+import isrl.byu.edu.metadata.MetadataHandle;
+import isrl.byu.edu.utils.FilePathUtils;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseContext;
 
+import java.util.Optional;
+
 public abstract class FusePath {
 
+    private boolean isDeleted = false;
+
     private String name;
-    private String fullName;
-    private DirectoryProxy parent;
+    private String parentFullPath;
 
     private IMetadataClient metadataClient;
     private IBundleClient bundleClient;
     private FuseContext fuseContext;
 
-    FusePath(String name, ProxyParameters proxyParameters) {
-        this(name, null, proxyParameters);
-    }
-
-    FusePath(String name, DirectoryProxy parent, ProxyParameters proxyParameters) {
-        this.name = name;
-        this.parent = parent;
-
-        if (parent == null) {
-            this.fullName = name;
-        } else {
-            this.fullName = parent.getFullName() + "/" + name;
-        }
+    FusePath(String fullPath, ProxyParameters proxyParameters) {
+        this.name = FilePathUtils.getFileName(fullPath);
+        this.parentFullPath = FilePathUtils.getParentFullPath(fullPath);
 
         this.metadataClient = proxyParameters.getMetadataClient();
         this.bundleClient = proxyParameters.getBundleClient();
@@ -35,30 +30,40 @@ public abstract class FusePath {
     }
 
     synchronized void delete() {
-        if (parent != null) {
-            parent.deleteChild(this);
-            parent = null;
-        }
+        this.getMetadataClient().removeChild(this.getFullPath());
+        isDeleted = true;
     }
 
     protected FusePath find(String path) {
         while (path.startsWith("/")) {
             path = path.substring(1);
         }
-        if (path.equals(name) || path.isEmpty()) {
+        if (path.equals(getFullPath()) || path.isEmpty()) {
+            if(isDeleted){
+                return null;
+            }
             return this;
         }
-        return null;
+
+        Optional<MetadataHandle> metadataHandleOptional = this.getMetadataClient().getMetadata(path);
+        if(!metadataHandleOptional.isPresent())
+        {
+            return null;
+        }
+
+        MetadataHandle metadataHandle = metadataHandleOptional.get();
+        if(metadataHandle.isDirectory())//is directory
+        {
+            return new DirectoryProxy(path,this.getProxyParameters());
+        }
+        else //is file
+        {
+            return new FileProxy(path,this.getProxyParameters());
+        }
     }
 
     protected abstract void getattr(FileStat stat);
-
-    void rename(String newName) {
-        while (newName.startsWith("/")) {
-            newName = newName.substring(1);
-        }
-        name = newName;
-    }
+    protected abstract void rename(String newName);
 
     protected FuseContext getContext() {
         return this.fuseContext;
@@ -72,18 +77,20 @@ public abstract class FusePath {
         return this.bundleClient;
     }
 
-    protected DirectoryProxy getParent() {
-        return this.parent;
+    protected String getParentFullPath() {
+        return this.parentFullPath;
     }
 
     protected String getName() {
         return this.name;
     }
 
-    protected String getFullName() { return this.fullName; }
+    protected String getFullPath() {
+        return FilePathUtils.getFullPath(this.parentFullPath, this.name);
+    }
 
-    protected void setParent(DirectoryProxy path) {
-        this.parent = path;
+    protected void setParent(String parentFullPath) {
+        this.parentFullPath = parentFullPath;
     }
 
     protected ProxyParameters getProxyParameters() {

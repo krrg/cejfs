@@ -2,18 +2,19 @@ package isrl.byu.edu;
 
 import isrl.byu.edu.bundle.IBundleClient;
 import isrl.byu.edu.metadata.IMetadataClient;
+import isrl.byu.edu.utils.FilePathUtils;
 import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseContext;
 
 public class FileProxy extends FusePath {
 
-    FileProxy(String name, ProxyParameters proxyParameters) {
-        super(name, proxyParameters);
+    FileProxy(String fullPath, ProxyParameters proxyParameters) {
+        super(fullPath, proxyParameters);
     }
 
-    FileProxy(String name, DirectoryProxy parent, ProxyParameters proxyParameters) {
-        super(name, parent, proxyParameters);
+    FileProxy(String name, String parentFullPath, ProxyParameters proxyParameters) {
+        super(FilePathUtils.getFullPath(parentFullPath, name), proxyParameters);
     }
 
     @Override
@@ -23,13 +24,13 @@ public class FileProxy extends FusePath {
 //            .mutateFileStat(stat);
 
         stat.st_mode.set(FileStat.S_IFREG | 0777);
-        stat.st_size.set(getBundleClient().readFile(getFullName()).length);
+        stat.st_size.set(getBundleClient().readFile(this.getFullPath()).length);
         stat.st_uid.set(getContext().uid.get());
         stat.st_gid.set(getContext().pid.get());
     }
 
     int read(Pointer buffer, long size, long offset) {
-        byte [] fullFile = getBundleClient().readFile(this.getFullName());
+        byte [] fullFile = getBundleClient().readFile(this.getFullPath());
         int actualSize = (int)Math.min(fullFile.length, size);
 
         buffer.put(offset, fullFile, (int)offset, actualSize);
@@ -71,7 +72,7 @@ public class FileProxy extends FusePath {
 
         byte [] allocated = new byte[(int) bufSize];
         buffer.get(0, allocated, 0, (int) bufSize);
-        getBundleClient().saveFile(allocated, this.getFullName());
+        getBundleClient().saveFile(allocated, this.getFullPath());
 
 //        int maxWriteIndex = (int) (writeOffset + bufSize);
 //        byte[] bytesToWrite = new byte[(int) bufSize];
@@ -91,5 +92,9 @@ public class FileProxy extends FusePath {
         /* Now save it to Bundle system */
 
         return (int) bufSize;
+    }
+    @Override
+    protected void rename(String newName) {
+        this.getMetadataClient().renameFile(getFullPath(), newName);
     }
 }

@@ -11,11 +11,15 @@ public interface IMetadataClient {
     Optional<MetadataHandle> getMetadata(String fullPath);
 
     /* Directory methods */
-    boolean add(String parentFullPath, String childName,  MetadataHandle handle);
-    boolean remove(String parentFullPath, String childName);
-    List<MetadataHandle> listChildren(String parent);
+    boolean addChild(String fullPath, MetadataHandle handle);
+    boolean removeChild(String fullPath);
+    boolean renameFolder(String fullPath, String newName);
+
+    List<String> listChildren(String parent);
 
     /* File methods */
+    boolean updateFilesize(String fullPath, long fileSize);
+    boolean renameFile(String fullPath, String newName);
 
 
 }

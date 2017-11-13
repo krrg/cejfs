@@ -64,7 +64,7 @@ public class FileToBundleMapper {
 
     //1. set the file to bundle mapping
     //2. set the bundle to file mapping
-    //3. remove the old bundle to file mapping and queue it for deletion if needed
+    //3. removeChild the old bundle to file mapping and queue it for deletion if needed
     //4. return the old bundle Id
     public String remapFile(String filename, String bundleID) {
         String oldBundleID = fileToBundleID.put(filename, bundleID);

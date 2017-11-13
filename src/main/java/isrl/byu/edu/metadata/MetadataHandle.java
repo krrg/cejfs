@@ -13,8 +13,29 @@ public class MetadataHandle {
     private long creationTime;
     private long updatedTime;
 
-    public MetadataHandle() {
+    public boolean isDirectory()
+    {
+        //todo: test this function
+        if(mode == (FileStat.S_IFDIR | 0777)) {
+            return true;
+        }
 
+        return false;
+    }
+
+
+    public MetadataHandle(FileStat stat) {
+        mode = stat.st_mode.longValue();
+        userId = stat.st_uid.longValue();
+        groupId = stat.st_gid.longValue();
+        if(!isDirectory()) {
+            size = stat.st_size.longValue();
+            //todo: I don't know if these are set anywhere,
+            //todo: This might be incorrect data. Also I am unsure how to get this data
+            //accessTime = stat.longValue();
+            //creationTime = stat..longValue();
+            //updatedTime = stat..longValue();
+        }
     }
 
     public long getAccessTime() {

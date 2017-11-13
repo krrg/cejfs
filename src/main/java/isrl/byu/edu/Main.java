@@ -2,6 +2,7 @@ package isrl.byu.edu;
 
 import isrl.byu.edu.bundle.BundleClient;
 import isrl.byu.edu.bundle.IBundleClient;
+import isrl.byu.edu.metadata.InMemoryMetadataClient;
 import isrl.byu.edu.storage.*;
 
 import java.io.FileNotFoundException;
@@ -32,7 +33,9 @@ public class Main {
         bundleClient.addDataLocation(new InMemoryDataStorage());
         bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
 
-        CejfsFuseFS fs = new CejfsFuseFS(null, bundleClient);
+        InMemoryMetadataClient metadataClient = new InMemoryMetadataClient();
+
+        CejfsFuseFS fs = new CejfsFuseFS(metadataClient, bundleClient);
 
         try {
             fs.mount(Paths.get("/tmp/cejfs"), true, false);

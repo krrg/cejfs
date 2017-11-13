@@ -29,15 +29,15 @@ public class CejfsFuseFS extends FuseStubFS {
         rootDirectory = new DirectoryProxy("", new ProxyParameters(this.getContext(), this.metadataClient, this.bundleClient));
 
 //        // Sprinkle some files around
-//        rootDirectory.add(new FileProxy("Sample file.txt", "Hello there, feel free to look around.\n"));
-//        rootDirectory.add(new DirectoryProxy("Sample directory"));
+//        rootDirectory.addChild(new FileProxy("Sample file.txt", "Hello there, feel free to look around.\n"));
+//        rootDirectory.addChild(new DirectoryProxy("Sample directory"));
 //        DirectoryProxy dirWithFiles = new DirectoryProxy("Directory with files");
-//        rootDirectory.add(dirWithFiles);
-//        dirWithFiles.add(new FileProxy("hello.txt", "This is some sample text.\n"));
-//        dirWithFiles.add(new FileProxy("hello again.txt", "This another file with text in it! Oh my!\n"));
+//        rootDirectory.addChild(dirWithFiles);
+//        dirWithFiles.addChild(new FileProxy("hello.txt", "This is some sample text.\n"));
+//        dirWithFiles.addChild(new FileProxy("hello again.txt", "This another file with text in it! Oh my!\n"));
 //        DirectoryProxy nestedDirectory = new DirectoryProxy("Sample nested directory");
-//        dirWithFiles.add(nestedDirectory);
-//        nestedDirectory.add(new FileProxy("So deep.txt", "Man, I'm like, so deep in this here file structure.\n"));
+//        dirWithFiles.addChild(nestedDirectory);
+//        nestedDirectory.addChild(new FileProxy("So deep.txt", "Man, I'm like, so deep in this here file structure.\n"));
     }
 
     @Override
