@@ -5,6 +5,7 @@ import isrl.byu.edu.bundle.IBundleClient;
 import isrl.byu.edu.metadata.InMemoryMetadataClient;
 import isrl.byu.edu.storage.*;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NoSuchFileException;
@@ -45,7 +46,7 @@ public class Main {
 
     }
 
-    private static void runBundleTest1() {
+    private static void runBundleTest1() throws FileNotFoundException {
         System.out.println("TEST 1 - read files after the local cache is cleared ======");
 
         Random r = new Random();
@@ -95,7 +96,7 @@ public class Main {
         }
     }
 
-    private static void runBundleTest2() {
+    private static void runBundleTest2() throws FileNotFoundException{
         System.out.println("TEST 2 - different local machines writing to remote client ======");
 
         Random r = new Random();
@@ -141,7 +142,7 @@ public class Main {
 
     }
 
-    private static void runBundleTest3() {
+    private static void runBundleTest3() throws FileNotFoundException{
         System.out.println("TEST 3 - resave files in order to force a deletion of an old bundle ======");
 
         Random r = new Random();
@@ -178,7 +179,7 @@ public class Main {
     }
 
 
-    private static byte[] readFile(IBundleClient bundleClient, String filename) {
+    private static byte[] readFile(IBundleClient bundleClient, String filename) throws FileNotFoundException {
         byte[] fileBytes = null;
         fileBytes = bundleClient.readFile (filename);
         return fileBytes;

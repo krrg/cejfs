@@ -89,7 +89,7 @@ public class BundleClient implements IBundleClient {
             then an exception will be called
      */
     @Override
-    public byte[] readFile(String filename) {
+    public byte[] readFile(String filename) throws FileNotFoundException{
 
         //read from pre committed local data
         FileTuple preCommittedFile = queuedFileSaves.get(filename);
@@ -101,14 +101,14 @@ public class BundleClient implements IBundleClient {
         //get bundleID and cache related metadata
         String bundleID = fetchBundleID(filename);
         if(bundleID == null) {
-            throw new RuntimeException("Could not find the metadata in any of the locations");
+            throw new FileNotFoundException("Could not find the metadata in any of the locations");
         }
         if(fileToBundleMapper.getBundleID(filename)==null) {
             //this means locally the meta data is new.
             //We should also get the bundleToFiles metadata
             HashSet<String> filesInBundle = fetchFilesInBundle(bundleID);
             if(filesInBundle == null) {
-                throw new RuntimeException("Could not find the metadata in any of the locations");
+                throw new FileNotFoundException("Could not find the metadata in any of the locations");
             }
             if(fileToBundleMapper.getFilesInBundle(bundleID) == null)
             {
@@ -121,7 +121,7 @@ public class BundleClient implements IBundleClient {
         //get bundle
         Bundle bundle = fetchBundle(bundleID, filename);
         if(bundle == null) {
-            throw new RuntimeException("Could not find the bundle in any of the locations");
+            throw new FileNotFoundException("Could not find the bundle in any of the locations");
         }
         if(cachedBundles.get(bundleID)==null) {
             cachedBundles.put(bundleID, bundle);

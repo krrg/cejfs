@@ -7,6 +7,8 @@ import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseContext;
 
+import java.io.FileNotFoundException;
+
 public class FileProxy extends FusePath {
 
     FileProxy(String fullPath, ProxyParameters proxyParameters) {
@@ -24,16 +26,31 @@ public class FileProxy extends FusePath {
 //            .mutateFileStat(stat);
 
         stat.st_mode.set(FileStat.S_IFREG | 0777);
-        stat.st_size.set(getBundleClient().readFile(this.getFullPath()).length);
+        long fileSize = 0;
+        try {
+            fileSize = getBundleClient().readFile(this.getFullPath()).length;
+        } catch (FileNotFoundException e) {
+            fileSize = 0;
+        }
+        stat.st_size.set(fileSize);
         stat.st_uid.set(getContext().uid.get());
         stat.st_gid.set(getContext().pid.get());
     }
 
-    int read(Pointer buffer, long size, long offset) {
-        byte [] fullFile = getBundleClient().readFile(this.getFullPath());
-        int actualSize = (int)Math.min(fullFile.length, size);
+    int read(Pointer buffer, long size, long offset)
+    {
+        byte [] fullFile = new byte[0];
 
-        buffer.put(offset, fullFile, (int)offset, actualSize);
+        int actualSize=0;
+        try {
+            fullFile = getBundleClient().readFile(this.getFullPath());
+            actualSize = (int)Math.min(fullFile.length, size);
+            buffer.put(offset, fullFile, (int)offset, actualSize);
+        } catch (FileNotFoundException e) {
+            actualSize=0;
+            e.printStackTrace();
+        }
+
         return actualSize;
 
         //

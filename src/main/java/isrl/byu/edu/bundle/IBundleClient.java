@@ -11,7 +11,7 @@ import java.nio.file.NoSuchFileException;
 public interface IBundleClient {
 
     boolean saveFile(byte[] bytes, String filename);
-    byte[] readFile(String filename);
+    byte[] readFile(String filename) throws FileNotFoundException;
 
     boolean addDataLocation(IDataStorage iDataStorage);
     boolean addMetadataLocation(IMetadataStorage iMetadataStorage);
