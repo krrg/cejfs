@@ -129,14 +129,13 @@ public class InMemoryMetadataClient implements IMetadataClient{
 
 
     @Override
-    public List<String> listChildren(String parent) {
+    public Collection<String> listChildren(String parent) {
         HashSet<String> fileDirectory = fileDirectoryStructure.get(parent);
         if(fileDirectory == null)
         {
             return new ArrayList<>();
         }
-        String[] childrenArray = (String[])fileDirectory.toArray();
-        return new ArrayList<>(Arrays.asList(childrenArray));
+        return fileDirectory;
     }
 
     @Override

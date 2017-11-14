@@ -1,5 +1,6 @@
 package isrl.byu.edu.metadata;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,12 +11,13 @@ public interface IMetadataClient {
 
     Optional<MetadataHandle> getMetadata(String fullPath);
 
-    /* Directory methods */
     boolean addChild(String fullPath, MetadataHandle handle);
     boolean removeChild(String fullPath);
+
+    /* Directory methods */
     boolean renameFolder(String fullPath, String newName);
 
-    List<String> listChildren(String parent);
+    Collection<String> listChildren(String parent);
 
     /* File methods */
     boolean updateFilesize(String fullPath, long fileSize);

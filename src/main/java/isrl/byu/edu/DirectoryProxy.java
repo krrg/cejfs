@@ -7,6 +7,7 @@ import jnr.ffi.Runtime;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
 
+import java.util.Collection;
 import java.util.List;
 
 public class DirectoryProxy extends FusePath {
@@ -19,7 +20,7 @@ public class DirectoryProxy extends FusePath {
         super(FilePathUtils.getFullPath(parentFullPath, name), proxyParameters);
     }
 
-    public synchronized void add(FusePath p) {
+    private synchronized void add(FusePath p) {
         FileStat fileStat = new FileStat(Runtime.getSystemRuntime());
         p.getattr(fileStat);
         MetadataHandle metadataHandle = new MetadataHandle(fileStat);
@@ -48,7 +49,7 @@ public class DirectoryProxy extends FusePath {
     }
 
     public synchronized void read(Pointer buf, FuseFillDir filler) {
-        List<String> children = this.getMetadataClient().listChildren(this.getFullPath());
+        Collection<String> children = this.getMetadataClient().listChildren(this.getFullPath());
         for (String fileName : children) {
             filler.apply(buf, fileName, null, 0);
         }

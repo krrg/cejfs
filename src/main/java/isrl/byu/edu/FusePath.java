@@ -34,18 +34,18 @@ public abstract class FusePath {
         isDeleted = true;
     }
 
-    protected FusePath find(String path) {
-        while (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        if (path.equals(getFullPath()) || path.isEmpty()) {
+    protected FusePath find(String fullPath) {
+        //while (path.startsWith("/")) {
+        //    path = path.substring(1);
+        //}
+        if (fullPath.equals(getFullPath()) || fullPath.isEmpty() || fullPath.equals("/")) {
             if(isDeleted){
                 return null;
             }
             return this;
         }
 
-        Optional<MetadataHandle> metadataHandleOptional = this.getMetadataClient().getMetadata(path);
+        Optional<MetadataHandle> metadataHandleOptional = this.getMetadataClient().getMetadata(fullPath);
         if(!metadataHandleOptional.isPresent())
         {
             return null;
@@ -54,11 +54,11 @@ public abstract class FusePath {
         MetadataHandle metadataHandle = metadataHandleOptional.get();
         if(metadataHandle.isDirectory())//is directory
         {
-            return new DirectoryProxy(path,this.getProxyParameters());
+            return new DirectoryProxy(fullPath,this.getProxyParameters());
         }
         else //is file
         {
-            return new FileProxy(path,this.getProxyParameters());
+            return new FileProxy(fullPath,this.getProxyParameters());
         }
     }
 

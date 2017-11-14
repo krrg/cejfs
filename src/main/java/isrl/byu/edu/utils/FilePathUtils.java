@@ -30,6 +30,12 @@ public class FilePathUtils {
     }
     public static String getFullPath(String parentFullPath, String name)
     {
+        //root
+        if(parentFullPath == null && name == null)
+        {
+            return "";
+        }
+
         if (parentFullPath == null) {
             return name;
         } else {

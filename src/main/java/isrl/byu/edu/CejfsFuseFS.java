@@ -27,7 +27,7 @@ public class CejfsFuseFS extends FuseStubFS {
         this.metadataClient = metadataClient;
         this.bundleClient = bundleClient;
         rootDirectory = new DirectoryProxy("", new ProxyParameters(this.getContext(), this.metadataClient, this.bundleClient));
-
+        //rootDirectory.add(rootDirectory);
 //        // Sprinkle some files around
 //        rootDirectory.addChild(new FileProxy("Sample file.txt", "Hello there, feel free to look around.\n"));
 //        rootDirectory.addChild(new DirectoryProxy("Sample directory"));
@@ -135,20 +135,20 @@ public class CejfsFuseFS extends FuseStubFS {
 
     @Override
     public int rename(String path, String newName) {
-        FusePath p = getPath(path);
-        if (p == null) {
-            return -ErrorCodes.ENOENT();
-        }
-        FusePath newParent = getParentPath(newName);
-        if (newParent == null) {
-            return -ErrorCodes.ENOENT();
-        }
-        if (!(newParent instanceof DirectoryProxy)) {
-            return -ErrorCodes.ENOTDIR();
-        }
-        p.delete();
-        p.rename(newName.substring(newName.lastIndexOf("/")));
-        ((DirectoryProxy) newParent).add(p);
+//        FusePath p = getPath(path);
+//        if (p == null) {
+//            return -ErrorCodes.ENOENT();
+//        }
+//        FusePath newParent = getParentPath(newName);
+//        if (newParent == null) {
+//            return -ErrorCodes.ENOENT();
+//        }
+//        if (!(newParent instanceof DirectoryProxy)) {
+//            return -ErrorCodes.ENOTDIR();
+//        }
+//        p.delete();
+//        p.rename(newName.substring(newName.lastIndexOf("/")));
+//        ((DirectoryProxy) newParent).add(p);
         return 0;
     }
 
