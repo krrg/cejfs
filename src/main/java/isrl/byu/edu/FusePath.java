@@ -63,7 +63,7 @@ public abstract class FusePath {
     }
 
     protected abstract void getattr(FileStat stat);
-    protected abstract void rename(String newName);
+    protected abstract void rename(String newFilePath);
 
     protected FuseContext getContext() {
         return this.fuseContext;

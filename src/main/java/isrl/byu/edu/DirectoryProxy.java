@@ -36,8 +36,8 @@ public class DirectoryProxy extends FusePath {
     }
 
     @Override
-    protected void rename(String newName) {
-        this.getMetadataClient().renameFolder(getFullPath(), newName);
+    protected void rename(String newFilePath) {
+        this.getMetadataClient().renameFolder(getFullPath(), newFilePath);
     }
 
     synchronized void mkdir(String lastComponent) {

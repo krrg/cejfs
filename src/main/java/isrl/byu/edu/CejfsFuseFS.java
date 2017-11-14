@@ -134,21 +134,21 @@ public class CejfsFuseFS extends FuseStubFS {
     }
 
     @Override
-    public int rename(String path, String newName) {
+    public int rename(String path, String newPath) {
         FusePath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        FusePath newParent = getParentPath(newName);
+        FusePath newParent = getParentPath(newPath);
         if (newParent == null) {
             return -ErrorCodes.ENOENT();
         }
         if (!(newParent instanceof DirectoryProxy)) {
             return -ErrorCodes.ENOTDIR();
         }
-//        p.delete();
-//        p.rename(newName.substring(newName.lastIndexOf("/")));
-//        ((DirectoryProxy) newParent).add(p);
+        //p.delete();
+        p.rename(newPath);
+        //((DirectoryProxy) newParent).add(p);
         return 0;
     }
 

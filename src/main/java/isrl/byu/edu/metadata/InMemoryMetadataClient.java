@@ -52,16 +52,6 @@ public class InMemoryMetadataClient implements IMetadataClient{
 
     @Override
     public boolean removeChild(String fullPath) {
-        metadataHandlesMap.remove(fullPath);
-        boolean successful = !getMetadata(fullPath).isPresent();
-        return successful;
-    }
-
-    @Override
-    public boolean renameFolder(String fullPath, String newName) {
-        while (newName.startsWith("/")) {
-            newName = newName.substring(1);
-        }
 
         String parentFullPath = FilePathUtils.getParentFullPath(fullPath);
         String filename = FilePathUtils.getFileName(fullPath);
@@ -71,9 +61,8 @@ public class InMemoryMetadataClient implements IMetadataClient{
         }
 
         HashSet<String> parentFileDirectory = fileDirectoryStructure.get(parentFullPath);
-        HashSet<String> fileDirectory = fileDirectoryStructure.get(fullPath);
 
-        if(parentFileDirectory == null || fileDirectory == null)
+        if(parentFileDirectory == null)
         {
             return false;
         }
@@ -83,16 +72,75 @@ public class InMemoryMetadataClient implements IMetadataClient{
             return false;
         }
 
+        HashSet<String> fileDirectory = fileDirectoryStructure.remove(fullPath);
+        if(fileDirectory != null)
+        {
+            //recurse through children
+            for (String child:
+            fileDirectory) {
+                removeChild(FilePathUtils.getFullPath(fullPath,child));
+            }
+        }
+
         parentFileDirectory.remove(filename);
-        parentFileDirectory.add(newName);
+        this.metadataHandlesMap.remove(fullPath);
+
+        boolean successful = !getMetadata(fullPath).isPresent();
+
+        return successful;
+    }
+
+    @Override
+    public boolean renameFolder(String fullPath, String newFilePath) {
+
+        String newParentFullPath = FilePathUtils.getParentFullPath(newFilePath);
+        String newFilename = FilePathUtils.getFileName(newFilePath);
+
+        String parentFullPath = FilePathUtils.getParentFullPath(fullPath);
+        String filename = FilePathUtils.getFileName(fullPath);
+        if(newParentFullPath == null || newFilename == null || parentFullPath == null || filename == null)
+        {
+            return false;
+        }
+
+        HashSet<String> parentFileDirectory = fileDirectoryStructure.get(parentFullPath);
+        HashSet<String> newParentFileDirectory = fileDirectoryStructure.get(newParentFullPath);
+
+        if(parentFileDirectory == null)
+        {
+            return false;
+        }
+
+        if(newParentFileDirectory == null)
+        {
+            fileDirectoryStructure.put(newParentFullPath, new HashSet());
+            newParentFileDirectory = fileDirectoryStructure.get(newParentFullPath);
+        }
+
+        boolean exists = parentFileDirectory.contains(filename) && this.metadataHandlesMap.containsKey(fullPath);
+        if(!exists){
+            return false;
+        }
+
+        parentFileDirectory.remove(filename);
+        newParentFileDirectory.add(newFilename);
 
         MetadataHandle metadataHandle = this.metadataHandlesMap.remove(fullPath);
-        metadataHandlesMap.put(FilePathUtils.getFullPath(parentFullPath,newName),metadataHandle);
+        metadataHandlesMap.put(FilePathUtils.getFullPath(newParentFullPath,newFilename),metadataHandle);
 
-        fileDirectory = fileDirectoryStructure.remove(fullPath);
-        fileDirectoryStructure.put(FilePathUtils.getFullPath(parentFullPath,newName), fileDirectory);
+        boolean successful = !getMetadata(fullPath).isPresent();
 
-        return renameChildrenPaths(fullPath, FilePathUtils.getFullPath(parentFullPath,newName));
+
+        HashSet<String> fileDirectory = fileDirectoryStructure.get(fullPath);
+
+        if(fileDirectory != null)
+        {
+            fileDirectory = fileDirectoryStructure.remove(fullPath);
+            fileDirectoryStructure.put(FilePathUtils.getFullPath(newParentFullPath,newFilename), fileDirectory);
+            successful &= renameChildrenPaths(fullPath, FilePathUtils.getFullPath(newParentFullPath,newFilename));
+        }
+
+        return successful;
     }
 
     private boolean renameChildrenPaths(String oldFullPath, String newFullPath)
@@ -155,35 +203,44 @@ public class InMemoryMetadataClient implements IMetadataClient{
     }
 
     @Override
-    public boolean renameFile(String fullPath, String newName) {
-        while (newName.startsWith("/")) {
-            newName = newName.substring(1);
-        }
+    public boolean renameFile(String fullPath, String newFilePath) {
+        String newParentFullPath = FilePathUtils.getParentFullPath(newFilePath);
+        String newFilename = FilePathUtils.getFileName(newFilePath);
 
         String parentFullPath = FilePathUtils.getParentFullPath(fullPath);
         String filename = FilePathUtils.getFileName(fullPath);
-        if(parentFullPath == null || filename == null)
+        if(newParentFullPath == null || newFilename == null || parentFullPath == null || filename == null)
         {
             return false;
         }
 
-        HashSet<String> fileDirectory = fileDirectoryStructure.get(parentFullPath);
-        if(fileDirectory == null)
+        HashSet<String> parentFileDirectory = fileDirectoryStructure.get(parentFullPath);
+        HashSet<String> newParentFileDirectory = fileDirectoryStructure.get(newParentFullPath);
+
+        if(parentFileDirectory == null)
         {
             return false;
         }
 
-        boolean exists = fileDirectory.contains(filename) && this.metadataHandlesMap.containsKey(fullPath);
+        if(newParentFileDirectory == null)
+        {
+            fileDirectoryStructure.put(newParentFullPath, new HashSet());
+            newParentFileDirectory = fileDirectoryStructure.get(newParentFullPath);
+        }
+
+        boolean exists = parentFileDirectory.contains(filename) && this.metadataHandlesMap.containsKey(fullPath);
         if(!exists){
             return false;
         }
 
-        fileDirectory.remove(filename);
-        fileDirectory.add(newName);
+        parentFileDirectory.remove(filename);
+        newParentFileDirectory.add(newFilename);
 
         MetadataHandle metadataHandle = this.metadataHandlesMap.remove(fullPath);
-        metadataHandlesMap.put(FilePathUtils.getFullPath(parentFullPath,newName),metadataHandle);
-        return true;
+        metadataHandlesMap.put(FilePathUtils.getFullPath(newParentFullPath,newFilename),metadataHandle);
+
+        boolean successful = !getMetadata(fullPath).isPresent();
+        return successful;
     }
 
 }

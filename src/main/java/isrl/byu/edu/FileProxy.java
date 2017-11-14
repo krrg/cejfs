@@ -111,7 +111,7 @@ public class FileProxy extends FusePath {
         return (int) bufSize;
     }
     @Override
-    protected void rename(String newName) {
-        this.getMetadataClient().renameFile(getFullPath(), newName);
+    protected void rename(String newFilePath) {
+        this.getMetadataClient().renameFile(getFullPath(), newFilePath);
     }
 }
