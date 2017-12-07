@@ -1,7 +1,6 @@
 package isrl.byu.edu.bundle;
 
-import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
-import com.sun.xml.internal.ws.encoding.soap.SerializationException;
+
 import isrl.byu.edu.storage.FileTuple;
 
 import java.io.*;
@@ -9,7 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
 
-public class Bundle implements Serializable{
+public class Bundle implements Serializable {
 
     private HashMap<String, FileTuple> files;
     private String bundleID;
@@ -35,7 +34,7 @@ public class Bundle implements Serializable{
         }
     }
 
-    public static byte[] serializeBundle(Bundle bundle) throws SerializationException {
+    public static byte[] serializeBundle(Bundle bundle) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutput out;
         byte[] bundleBytes = null;
@@ -57,12 +56,12 @@ public class Bundle implements Serializable{
 
         if(bundleBytes == null)
         {
-            throw new SerializationException("");
+            throw new RuntimeException("");
         }
 
         return bundleBytes;
     }
-    public static Bundle deserializeBundle(byte[] data) throws DeserializationException {
+    public static Bundle deserializeBundle(byte[] data) {
         ByteArrayInputStream bis = new ByteArrayInputStream(data);
         ObjectInput in = null;
         Bundle bundle = null;
@@ -87,7 +86,7 @@ public class Bundle implements Serializable{
 
         if(bundle == null)
         {
-            throw new DeserializationException("");
+            throw new RuntimeException("");
         }
         return bundle;
     }

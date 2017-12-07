@@ -1,7 +1,6 @@
 package isrl.byu.edu.bundle;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
 import isrl.byu.edu.storage.*;
 import isrl.byu.edu.utils.JSON;
 
@@ -182,8 +181,6 @@ public class BundleClient implements IBundleClient {
                 if(fetchedBundle != null && fetchedBundle.getFile(filename) == null) {
                     throw new FileNotFoundException();
                 }
-            } catch (DeserializationException e) {
-                e.printStackTrace();
             } catch (ConnectException e) {
                 e.printStackTrace();
             }
