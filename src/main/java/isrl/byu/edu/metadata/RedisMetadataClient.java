@@ -5,9 +5,7 @@ import io.lettuce.core.api.sync.RedisCommands;
 import isrl.byu.edu.utils.FilePathUtils;
 
 import javax.swing.text.html.Option;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 
 public class RedisMetadataClient implements IMetadataClient {
@@ -19,77 +17,97 @@ public class RedisMetadataClient implements IMetadataClient {
 
     }
 
-    public boolean isDirectory(String name) {
-        return false;
-    }
-
-
-    public boolean isSubDirectory(String parent, String child) {
-        return false;
-    }
-
     public Optional<MetadataHandle> getMetadata(String name) {
         RedisCommands<String, String> rediscx = redis.connect().sync();
+        Map<String, String> metadataMap = rediscx.hgetall(name);
 
-        throw new UnsupportedOperationException("Not yet implemented.");
+        System.out.println("Metadata mpa" + metadataMap);
+        if (metadataMap == null || metadataMap.isEmpty()) {
+            return Optional.empty();
+        }
+
+        try {
+
+            long mode = Long.parseLong(metadataMap.getOrDefault("mode", "0"));
+            long userId = Long.parseLong(metadataMap.getOrDefault("userId", "0"));
+            long groupId = Long.parseLong(metadataMap.getOrDefault("groupId", "0"));
+            long size = Long.parseLong(metadataMap.getOrDefault("size", "0"));
+            long accessTime = Long.parseLong(metadataMap.getOrDefault("accessTime", "0"));
+            long creationTime = Long.parseLong(metadataMap.getOrDefault("creationTime", "0"));
+            long updatedTime = Long.parseLong(metadataMap.getOrDefault("updatedTime", "0"));
+
+            MetadataHandle metadataHandle = new MetadataHandle(mode, userId, groupId);
+            metadataHandle.setSize(size);
+            metadataHandle.setAccessTime(accessTime);
+            metadataHandle.setCreationTime(creationTime);
+            metadataHandle.setUpdatedTime(updatedTime);
+
+            return Optional.of(metadataHandle);
+
+        } catch (Exception e) {
+            System.out.println("I just caught an exception." + e);
+            e.printStackTrace();
+            return Optional.empty();
+        }
+
+
     }
 
     @Override
     public boolean addChild(String fullPath, MetadataHandle handle) {
 
-        String parent = FilePathUtils.getParentFullPath(fullPath);
+        System.err.println("Trying to print full path" + fullPath);
+
+        String parent = "parent:" + FilePathUtils.getParentFullPath(fullPath);
         String child = FilePathUtils.getFileName(fullPath);
 
         RedisCommands<String, String> rediscx = redis.connect().sync();
 
-        String existingChildMetadataKey = rediscx.hget(parent, child);
-        if (existingChildMetadataKey != null) {
-            throw new UnsupportedOperationException("Already exists.  Also this is the wrong exception :)");
+        if (rediscx.sismember(parent, child)) {
+            System.err.println("File already exists.");
+            return false;
         }
 
-        String newChildMetadataKey = child + "(" + UUID.randomUUID().toString() + ")";
+        rediscx.sadd(parent, child);
 
         rediscx.multi();
-        rediscx.hset(newChildMetadataKey, "mode", Long.toHexString(handle.getMode()));
-        rediscx.hset(newChildMetadataKey, "userId", Long.toHexString(handle.getUserId()));
-        rediscx.hset(newChildMetadataKey, "groupId", Long.toHexString(handle.getGroupId()));
-        rediscx.hset(newChildMetadataKey, "size", Long.toHexString(handle.getSize()));
-        rediscx.hset(newChildMetadataKey, "accessTime", Long.toHexString(handle.getAccessTime()));
-        rediscx.hset(newChildMetadataKey, "creationTime", Long.toHexString(handle.getCreationTime()));
-        rediscx.hset(newChildMetadataKey, "updatedTime", Long.toHexString(handle.getUpdatedTime()));
+        rediscx.hset(fullPath, "mode", Long.toString(handle.getMode()));
+        rediscx.hset(fullPath, "userId", Long.toString(handle.getUserId()));
+        rediscx.hset(fullPath, "groupId", Long.toString(handle.getGroupId()));
+        rediscx.hset(fullPath, "size", Long.toString(handle.getSize()));
+        rediscx.hset(fullPath, "accessTime", Long.toString(handle.getAccessTime()));
+        rediscx.hset(fullPath, "creationTime", Long.toString(handle.getCreationTime()));
+        rediscx.hset(fullPath, "updatedTime", Long.toString(handle.getUpdatedTime()));
         rediscx.exec();
+
+        System.err.println("Returning true!");
 
         return true;
     }
 
     @Override
     public boolean removeChild(String fullPath) {
-        // Is it a directory?
-        String key = fullPath;
+        RedisCommands<String, String> rediscx = redis.connect().sync();
 
-        if (! this.listChildren(key).isEmpty()) {
+        String parent = "parent:" + FilePathUtils.getParentFullPath(fullPath);
+        String child = FilePathUtils.getFileName(fullPath);
 
-        }
-
-        return false;    }
+        return rediscx.srem(parent, child) > 0;
+    }
 
     @Override
     public boolean renameFolder(String fullPath, String newName) {
-        return false;
+        throw new UnsupportedOperationException("I don't know how to rename things.");
     }
 
     @Override
-    public List<String> listChildren(String parent) {
-        return null;
-    }
-
-    @Override
-    public boolean updateFilesize(String fullPath, long fileSize) {
-        return false;
+    public Collection<String> listChildren(String parent) {
+        System.out.println("Looking at parent: " + parent);
+        return redis.connect().sync().smembers("parent:" + parent);
     }
 
     @Override
     public boolean renameFile(String fullPath, String newName) {
-        return false;
+        throw new UnsupportedOperationException("I don't know how to rename things.");
     }
 }

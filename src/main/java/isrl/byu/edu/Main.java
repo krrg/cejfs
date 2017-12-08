@@ -2,7 +2,9 @@ package isrl.byu.edu;
 
 import isrl.byu.edu.bundle.BundleClient;
 import isrl.byu.edu.bundle.IBundleClient;
+import isrl.byu.edu.metadata.IMetadataClient;
 import isrl.byu.edu.metadata.InMemoryMetadataClient;
+import isrl.byu.edu.metadata.RedisMetadataClient;
 import isrl.byu.edu.storage.*;
 
 import java.io.File;
@@ -34,7 +36,8 @@ public class Main {
         bundleClient.addDataLocation(new InMemoryDataStorage());
         bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
 
-        InMemoryMetadataClient metadataClient = new InMemoryMetadataClient();
+        IMetadataClient metadataClient = new RedisMetadataClient("redis://127.0.0.1:6379");
+//        IMetadataClient metadataClient = new InMemoryMetadataClient();
 
         CejfsFuseFS fs = new CejfsFuseFS(metadataClient, bundleClient);
 

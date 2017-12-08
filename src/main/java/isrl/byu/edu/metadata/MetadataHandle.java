@@ -1,6 +1,7 @@
 package isrl.byu.edu.metadata;
 
 
+import jnr.ffi.annotations.Meta;
 import ru.serce.jnrfuse.struct.FileStat;
 
 public class MetadataHandle {
@@ -36,6 +37,12 @@ public class MetadataHandle {
             //creationTime = stat..longValue();
             //updatedTime = stat..longValue();
         }
+    }
+
+    public MetadataHandle(long mode, long userId, long groupId) {
+        this.mode = mode;
+        this.userId = userId;
+        this.groupId = groupId;
     }
 
     public long getAccessTime() {

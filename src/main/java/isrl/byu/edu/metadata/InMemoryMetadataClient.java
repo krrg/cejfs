@@ -186,7 +186,6 @@ public class InMemoryMetadataClient implements IMetadataClient{
         return fileDirectory;
     }
 
-    @Override
     public boolean updateFilesize(String fullPath, long fileSize) {
         if(fullPath == null) {
             return false;

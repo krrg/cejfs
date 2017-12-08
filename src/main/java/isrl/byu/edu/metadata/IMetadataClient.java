@@ -19,8 +19,8 @@ public interface IMetadataClient {
 
     Collection<String> listChildren(String parent);
 
-    /* File methods */
-    boolean updateFilesize(String fullPath, long fileSize);
+//    /* File methods */
+//    boolean updateFilesize(String fullPath, long fileSize);
     boolean renameFile(String fullPath, String newName);
 
 

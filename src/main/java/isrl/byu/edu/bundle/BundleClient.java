@@ -139,10 +139,11 @@ public class BundleClient implements IBundleClient {
                 fetchedBundleID = metadataLocation.readMetadata(filename);
             }
             catch (ConnectException e) {
-                e.printStackTrace();
+                // Suppress!
+                //                e.printStackTrace();
             }
             catch (NoSuchFieldException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
             }
         }
         return fetchedBundleID;

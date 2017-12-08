@@ -29,7 +29,7 @@ public class InMemoryMetadataStorage implements IMetadataStorage {
     public String readMetadata(String key) throws NoSuchFieldException, ConnectException {
         if(!metaDataMapper.containsKey(key))
         {
-            throw new NoSuchFieldException("");
+            throw new NoSuchFieldException("No such field is coming to town! " + key);
         }
         return metaDataMapper.get(key);
     }
