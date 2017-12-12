@@ -8,6 +8,7 @@ import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseContext;
 
 import java.io.FileNotFoundException;
+import java.nio.ByteBuffer;
 
 public class FileProxy extends FusePath {
 
@@ -82,15 +83,18 @@ public class FileProxy extends FusePath {
     }
 
     int write(Pointer buffer, long bufSize, long writeOffset) {
-        if (writeOffset > 0) {
-            System.out.println("Write offset was: " + writeOffset);
-            throw new UnsupportedOperationException("Write offset cannot be non-zero");
-        }
+
 
         byte [] allocated = new byte[(int) bufSize];
         buffer.get(0, allocated, 0, (int) bufSize);
-        getBundleClient().saveFile(allocated, this.getFullPath());
 
+        if (writeOffset > 0) {
+            //System.out.println("Write offset was: " + writeOffset);
+            getBundleClient().insertInFile(allocated,this.getFullPath(), (int)writeOffset);
+        }
+        else {
+            getBundleClient().saveFile(allocated, this.getFullPath());
+        }
 //        int maxWriteIndex = (int) (writeOffset + bufSize);
 //        byte[] bytesToWrite = new byte[(int) bufSize];
 //        synchronized (this) {

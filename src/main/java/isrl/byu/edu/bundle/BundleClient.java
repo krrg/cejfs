@@ -21,8 +21,13 @@ public class BundleClient implements IBundleClient {
     private List<IMetadataStorage> metadataLocations = new LinkedList<>();
 
     final int MEGABYTE = 1000000;
-    final int MAX_FILES_PER_BUNDLE = 20;
+
+    final int MAX_FILES_PER_BUNDLE = 50;
     final double MAX_FILESIZE_PER_BUNDLE = MEGABYTE * 2.5;
+
+    final double FLUSH_AT_FILES_PER_BUNDLE = MAX_FILES_PER_BUNDLE + 10;
+    final double FLUSH_AT_FILESIZE_PER_BUNDLE = MAX_FILESIZE_PER_BUNDLE*1.9;
+
 
     public BundleClient() {
     }
@@ -55,23 +60,46 @@ public class BundleClient implements IBundleClient {
     public boolean saveFile(byte[] bytes, String filename) {
 
         FileTuple bundleFile = new FileTuple(filename,bytes);
+        return saveFile(bundleFile,filename);
+    }
+
+    private boolean saveFile(FileTuple bundleFile, String filename) {
+
         if(queuedFileSaves.containsKey(filename)){
 
-           FileTuple oldFileTuple = queuedFileSaves.remove(filename);
-           queuedFileSavesByteSize -= oldFileTuple.getFileSize();
+            FileTuple oldFileTuple = queuedFileSaves.remove(filename);
+            queuedFileSavesByteSize -= oldFileTuple.getFileSize();
         }
 
         queuedFileSaves.put(filename, bundleFile);
         queuedFileSavesByteSize += bundleFile.getFileSize();
 
         //todo: change this to be a file size instead of number of files or maybe and files?
-        //if(queuedFileSaves.size() >= MAX_FILES_PER_BUNDLE)
-        if(getTotalByteSizeOfQueuedFileSaves() >= MAX_FILESIZE_PER_BUNDLE) {
+        if(queuedFileSaves.size() >= FLUSH_AT_FILES_PER_BUNDLE){
+            //if(getTotalByteSizeOfQueuedFileSaves() >= MAX_FILESIZE_PER_BUNDLE) {
             flush();
             return true;
         }
 
         return false;
+    }
+
+
+    @Override
+    public boolean insertInFile(byte[] bytes, String filename, int offset) {
+
+        FileTuple fileTuple;
+
+        try {
+            fileTuple = readFileTuple(filename);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+
+        fileTuple.insertData(bytes,offset);
+        return saveFile(fileTuple,filename);
     }
 
     private int getTotalByteSizeOfQueuedFileSaves(){
@@ -90,11 +118,15 @@ public class BundleClient implements IBundleClient {
     @Override
     public byte[] readFile(String filename) throws FileNotFoundException{
 
+        return readFileTuple(filename).getData();
+    }
+    private FileTuple readFileTuple(String filename) throws FileNotFoundException{
+
         //read from pre committed local data
         FileTuple preCommittedFile = queuedFileSaves.get(filename);
         //todo: this assumes preCommittedFiles are always the most upto date.
         if(preCommittedFile != null) {
-            return preCommittedFile.getData();
+            return preCommittedFile;
         }
 
         //get bundleID and cache related metadata
@@ -127,7 +159,7 @@ public class BundleClient implements IBundleClient {
         }
         FileTuple committedFile = cachedBundles.get(bundleID).getFile(filename);
 
-        return committedFile.getData();
+        return committedFile;
     }
     private String fetchBundleID(String filename) {
         String fetchedBundleID = fileToBundleMapper.getBundleID(filename);
@@ -217,9 +249,38 @@ public class BundleClient implements IBundleClient {
     }
 
     private Bundle createBundle() {
-        Bundle newBundle = new Bundle(this.queuedFileSaves.values());
-        this.queuedFileSaves.clear();
-        this.queuedFileSavesByteSize =0;
+
+        Bundle newBundle;
+        int queueCount = this.queuedFileSaves.keySet().size();
+        if(queueCount <= MAX_FILES_PER_BUNDLE) {
+            Collection<FileTuple> filesToBundle = this.queuedFileSaves.values();
+            newBundle = new Bundle(filesToBundle);
+            this.queuedFileSaves.clear();
+            this.queuedFileSavesByteSize =0;
+        }
+        else {
+
+            LinkedHashMap<String, FileTuple> newQueuedFileSaves = new LinkedHashMap<>();
+            HashSet<String> keysToSave = new HashSet<>();
+            int count =0;
+            this.queuedFileSavesByteSize =0;
+            for (String key: this.queuedFileSaves.keySet()) {
+                if(count++ < MAX_FILES_PER_BUNDLE) {
+                    continue;
+                }
+                keysToSave.add(key);
+            }
+            for (String key: keysToSave) {
+                FileTuple fileTuple = this.queuedFileSaves.remove(key);
+                newQueuedFileSaves.put(key,fileTuple);
+                this.queuedFileSavesByteSize += fileTuple.getFileSize();
+            }
+
+            Collection<FileTuple> filesToBundle = this.queuedFileSaves.values();
+            newBundle = new Bundle(filesToBundle);
+            this.queuedFileSaves.clear();
+            this.queuedFileSaves = newQueuedFileSaves;
+        }
         return newBundle;
     }
 

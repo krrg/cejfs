@@ -33,16 +33,20 @@ public class Main {
 //        runBundleTest3();
 
         BundleClient bundleClient = new BundleClient();
-        bundleClient.addDataLocation(new InMemoryDataStorage());
-        bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
 
-        IMetadataClient metadataClient = new RedisMetadataClient("redis://127.0.0.1:6379");
+        //bundleClient.addDataLocation(new AWSDataStorage());
+        bundleClient.addDataLocation(new InMemoryDataStorage());
+
+        bundleClient.addMetadataLocation(new RedisMetadataStorage(redisURL));
+//        bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
+
+        IMetadataClient metadataClient = new RedisMetadataClient(redisURL);
 //        IMetadataClient metadataClient = new InMemoryMetadataClient();
 
         CejfsFuseFS fs = new CejfsFuseFS(metadataClient, bundleClient);
 
         try {
-            fs.mount(Paths.get("/tmp/cejfs"), true, false);
+            fs.mount(Paths.get("/tmp/cejfs1"), true, false);
         } finally {
             fs.umount(); // Could they not spell "unmount"
         }

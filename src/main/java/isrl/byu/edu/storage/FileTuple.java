@@ -1,9 +1,14 @@
 package isrl.byu.edu.storage;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class FileTuple implements Serializable {
     private String filename;
     private byte[] data;
+    private long fileSize;
 
     public String getFileName() { return filename; }
     public byte[] getData()
@@ -12,12 +17,40 @@ public class FileTuple implements Serializable {
     }
     public long getFileSize()
     {
-        return data.length;
+        return fileSize;
     }
 
     public FileTuple(String filename, byte[] data) {
         this.filename = filename;
         this.data = data;
+        this.fileSize = data.length;
+    }
+
+    public boolean insertData(byte[] newData, int offset){
+
+        if(offset + newData.length > data.length) {
+            //need to extend array
+            byte[] biggerData = new byte[data.length*2];
+            System.arraycopy(data,0,biggerData,0,data.length);
+            data = biggerData;
+        }
+
+
+        if(offset + newData.length > getFileSize()) {
+            long fileSizeChange = newData.length - (getFileSize() - offset);
+            this.fileSize += fileSizeChange;
+        }
+        //else {
+            //do not need to extend array
+
+        //   byte[] messyAdd = this.data.toByteArray();
+        //    System.arraycopy(newData,0,messyAdd,offset,newData.length);
+        //    this.data = new ByteArrayOutputStream();
+        //    this.data.write(messyAdd,0,messyAdd.length);
+        //}
+        System.arraycopy(newData,0,data,offset,newData.length);
+
+        return true;
     }
 
     @Override

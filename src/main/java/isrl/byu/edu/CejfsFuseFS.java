@@ -90,6 +90,10 @@ public class CejfsFuseFS extends FuseStubFS {
         }
         FusePath parent = getParentPath(path);
         if (parent instanceof DirectoryProxy) {
+            if(getLastComponent(path).equals("flush"))
+            {
+                this.bundleClient.flush();
+            }
             ((DirectoryProxy) parent).mkdir(getLastComponent(path));
             return 0;
         }
