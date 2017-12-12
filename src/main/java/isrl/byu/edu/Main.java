@@ -44,13 +44,13 @@ public class Main {
         bundleClient.addMetadataLocation(new RedisMetadataStorage(redisURL));
         //bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
 
-        //IMetadataClient metadataClient = new RedisMetadataClient(redisURL);
-        IMetadataClient metadataClient = new InMemoryMetadataClient();
+        IMetadataClient metadataClient = new RedisMetadataClient(redisURL);
+        //IMetadataClient metadataClient = new InMemoryMetadataClient();
 
         CejfsFuseFS fs = new CejfsFuseFS(metadataClient, bundleClient);
 
         try {
-            fs.mount(Paths.get("/tmp/cejfs"), true, false);
+            fs.mount(Paths.get("/tmp/cejfs2"), true, false);
         } finally {
             fs.umount(); // Could they not spell "unmount"
         }

@@ -1,5 +1,6 @@
 package isrl.byu.edu.storage;
 
+import io.lettuce.core.KeyValue;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
@@ -7,14 +8,18 @@ import io.lettuce.core.api.sync.RedisCommands;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NoSuchFileException;
+import java.util.List;
 
 public class RedisMetadataStorage implements IMetadataStorage {
 
     private PendingMetadataActions pendingActions = new PendingMetadataActions();
     private RedisClient redis = null;
-
+    private StatefulRedisConnection<String, String> connection = null;
+    private String BUNDLERKEY = "...BUNDLER...";
     public RedisMetadataStorage(String redisConnectionUri) {
+
         redis = RedisClient.create(redisConnectionUri);
+        connection = redis.connect();
     }
 
     @Override
@@ -30,30 +35,24 @@ public class RedisMetadataStorage implements IMetadataStorage {
     @Override
     public String writeMetadata(String key, String value) throws ConnectException {
 
-        StatefulRedisConnection<String,String> connection = redis.connect();
         RedisCommands<String, String> commands = connection.sync();
-        String oldValue = commands.get(key);
-        commands.set(key, value);
-        connection.close();
+        String oldValue = commands.get(BUNDLERKEY+key);
+        commands.set(BUNDLERKEY+key, value);
         return oldValue;
     }
 
     @Override
     public String readMetadata(String key) throws NoSuchFieldException, ConnectException {
-        StatefulRedisConnection<String,String> connection = redis.connect();
         RedisCommands<String, String> commands = connection.sync();
-        String value = commands.get(key);
-        connection.close();
+        String value = commands.get(BUNDLERKEY+key);
         return value;
     }
 
     @Override
     public String deleteMetadata(String key) throws ConnectException {
-        StatefulRedisConnection<String,String> connection = redis.connect();
         RedisCommands<String, String> commands = connection.sync();
-        String oldValue = commands.get(key);
-        commands.del(key);
-        connection.close();
+        String oldValue = commands.get(BUNDLERKEY+key);
+        commands.del(BUNDLERKEY+key);
         return oldValue;
     }
 
