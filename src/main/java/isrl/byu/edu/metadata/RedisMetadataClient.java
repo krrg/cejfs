@@ -1,6 +1,7 @@
 package isrl.byu.edu.metadata;
 
 import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import isrl.byu.edu.utils.FilePathUtils;
 
@@ -11,14 +12,15 @@ import java.util.*;
 public class RedisMetadataClient implements IMetadataClient {
 
     private RedisClient redis = null;
+    private StatefulRedisConnection<String, String> connection = null;
 
     public RedisMetadataClient(String redisConnectionUri) {
         redis = RedisClient.create(redisConnectionUri);
-
+        connection = redis.connect();
     }
 
     public Optional<MetadataHandle> getMetadata(String name) {
-        RedisCommands<String, String> rediscx = redis.connect().sync();
+        RedisCommands<String, String> rediscx = connection.sync();
         Map<String, String> metadataMap = rediscx.hgetall(name);
 
         System.out.println("Metadata mpa" + metadataMap);
@@ -49,8 +51,6 @@ public class RedisMetadataClient implements IMetadataClient {
             e.printStackTrace();
             return Optional.empty();
         }
-
-
     }
 
     @Override
@@ -61,7 +61,7 @@ public class RedisMetadataClient implements IMetadataClient {
         String parent = "parent:" + FilePathUtils.getParentFullPath(fullPath);
         String child = FilePathUtils.getFileName(fullPath);
 
-        RedisCommands<String, String> rediscx = redis.connect().sync();
+        RedisCommands<String, String> rediscx = connection.sync();
 
         if (rediscx.sismember(parent, child)) {
             System.err.println("File already exists.");
@@ -87,7 +87,7 @@ public class RedisMetadataClient implements IMetadataClient {
 
     @Override
     public boolean removeChild(String fullPath) {
-        RedisCommands<String, String> rediscx = redis.connect().sync();
+        RedisCommands<String, String> rediscx = connection.sync();
 
         String parent = "parent:" + FilePathUtils.getParentFullPath(fullPath);
         String child = FilePathUtils.getFileName(fullPath);
@@ -103,7 +103,7 @@ public class RedisMetadataClient implements IMetadataClient {
     @Override
     public Collection<String> listChildren(String parent) {
         System.out.println("Looking at parent: " + parent);
-        return redis.connect().sync().smembers("parent:" + parent);
+        return connection.sync().smembers("parent:" + parent);
     }
 
     @Override

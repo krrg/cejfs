@@ -36,8 +36,7 @@ public class Main {
 
         //bundleClient.addDataLocation(new AWSDataStorage());
         bundleClient.addDataLocation(new InMemoryDataStorage());
-
-        bundleClient.addMetadataLocation(new RedisMetadataStorage(redisURL));
+        bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
 //        bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
 
         IMetadataClient metadataClient = new RedisMetadataClient(redisURL);
@@ -46,7 +45,7 @@ public class Main {
         CejfsFuseFS fs = new CejfsFuseFS(metadataClient, bundleClient);
 
         try {
-            fs.mount(Paths.get("/tmp/cejfs1"), true, false);
+            fs.mount(Paths.get("/tmp/cejfs"), true, false);
         } finally {
             fs.umount(); // Could they not spell "unmount"
         }
