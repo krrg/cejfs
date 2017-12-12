@@ -34,13 +34,16 @@ public class RedisMetadataStorage implements IMetadataStorage {
         RedisCommands<String, String> commands = connection.sync();
         String oldValue = commands.get(key);
         commands.set(key, value);
+        connection.close();
         return oldValue;
     }
 
     @Override
     public String readMetadata(String key) throws NoSuchFieldException, ConnectException {
-        RedisCommands<String, String> commands = redis.connect().sync();
+        StatefulRedisConnection<String,String> connection = redis.connect();
+        RedisCommands<String, String> commands = connection.sync();
         String value = commands.get(key);
+        connection.close();
         return value;
     }
 
@@ -50,6 +53,7 @@ public class RedisMetadataStorage implements IMetadataStorage {
         RedisCommands<String, String> commands = connection.sync();
         String oldValue = commands.get(key);
         commands.del(key);
+        connection.close();
         return oldValue;
     }
 

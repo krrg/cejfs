@@ -16,7 +16,7 @@ import java.util.Random;
 
 public class Main {
 
-    static String redisURL = "redis://127.0.0.1:6379/0";
+    static String redisURL = "redis://127.0.0.1:6379";
 
     public static void main(String[] args) {
 
@@ -28,9 +28,13 @@ public class Main {
         //}
 
         System.out.println("hello world");
-//        runBundleTest1();
-//        runBundleTest2();
-//        runBundleTest3();
+        //try {
+        //    runBundleTest1();
+        //    runBundleTest2();
+        //    runBundleTest3();
+        //} catch (FileNotFoundException e) {
+        //    e.printStackTrace();
+        //}
 
         BundleClient bundleClient = new BundleClient();
 
@@ -38,15 +42,15 @@ public class Main {
         bundleClient.addDataLocation(new InMemoryDataStorage());
 
         bundleClient.addMetadataLocation(new RedisMetadataStorage(redisURL));
-//        bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
+        //bundleClient.addMetadataLocation(new InMemoryMetadataStorage());
 
-        IMetadataClient metadataClient = new RedisMetadataClient(redisURL);
-//        IMetadataClient metadataClient = new InMemoryMetadataClient();
+        //IMetadataClient metadataClient = new RedisMetadataClient(redisURL);
+        IMetadataClient metadataClient = new InMemoryMetadataClient();
 
         CejfsFuseFS fs = new CejfsFuseFS(metadataClient, bundleClient);
 
         try {
-            fs.mount(Paths.get("/tmp/cejfs1"), true, false);
+            fs.mount(Paths.get("/tmp/cejfs"), true, false);
         } finally {
             fs.umount(); // Could they not spell "unmount"
         }
@@ -67,15 +71,15 @@ public class Main {
         IBundleClient bundleClient = new BundleClient();
         bundleClient.addDataLocation(inMemoryDataStorage);
         //bundleClient.addDataLocation(awsDataStorage);
-        bundleClient.addMetadataLocation(inMemoryMetadataStorage);
-        //bundleClient.addMetadataLocation(redisMetaDataStorage);
+        //bundleClient.addMetadataLocation(inMemoryMetadataStorage);
+        bundleClient.addMetadataLocation(redisMetaDataStorage);
 
         //create a new local cache, simulating a restart
         IBundleClient bundleClient2 = new BundleClient();
         bundleClient2.addDataLocation(inMemoryDataStorage);
         //bundleClient2.addDataLocation(awsDataStorage);
-        bundleClient2.addMetadataLocation(inMemoryMetadataStorage);
-        //bundleClient2.addMetadataLocation(redisMetaDataStorage);
+        //bundleClient2.addMetadataLocation(inMemoryMetadataStorage);
+        bundleClient2.addMetadataLocation(redisMetaDataStorage);
 
         int FILES_TO_CREATE = 50;
         for(int i = 0; i < FILES_TO_CREATE; i++) {
@@ -117,15 +121,15 @@ public class Main {
         IBundleClient bundleClient = new BundleClient();
         bundleClient.addDataLocation(inMemoryDataStorage);
         //bundleClient.addDataLocation(awsDataStorage);
-        bundleClient.addMetadataLocation(inMemoryMetadataStorage);
-        //bundleClient.addMetadataLocation(redisMetaDataStorage);
+        //bundleClient.addMetadataLocation(inMemoryMetadataStorage);
+        bundleClient.addMetadataLocation(redisMetaDataStorage);
 
         //multiple users
         IBundleClient bundleClient2 = new BundleClient();
         bundleClient2.addDataLocation(inMemoryDataStorage);
         //bundleClient2.addDataLocation(awsDataStorage);
-        bundleClient2.addMetadataLocation(inMemoryMetadataStorage);
-        //bundleClient2.addMetadataLocation(redisMetaDataStorage);
+        //bundleClient2.addMetadataLocation(inMemoryMetadataStorage);
+        bundleClient2.addMetadataLocation(redisMetaDataStorage);
 
         int FILES_TO_CREATE = 40;
         for(int i = 0; i < FILES_TO_CREATE; i++) {
@@ -163,8 +167,8 @@ public class Main {
         IBundleClient bundleClient = new BundleClient();
         bundleClient.addDataLocation(inMemoryDataStorage);
         //bundleClient.addDataLocation(awsDataStorage);
-        bundleClient.addMetadataLocation(inMemoryMetadataStorage);
-        //bundleClient.addMetadataLocation(redisMetaDataStorage);
+        //bundleClient.addMetadataLocation(inMemoryMetadataStorage);
+        bundleClient.addMetadataLocation(redisMetaDataStorage);
 
         int FILES_TO_CREATE = 100;
         for(int i = 0; i < FILES_TO_CREATE; i++) {
